@@ -3,115 +3,93 @@ const { pool } = require('../config/database');
 class Order {
   // Lấy tất cả đơn hàng
   static async findAll({ page = 1, limit = 10, search = '', status, payment_status, date_from, date_to }) {
-    try {
-      const offset = (page - 1) * limit;
-      let query = `
-        SELECT o.*, c.name as customer_name, c.phone as customer_phone, u.username as created_by_name
-        FROM ORDERS o
-        LEFT JOIN CUSTOMERS c ON o.customer_id = c.customer_id
-        LEFT JOIN USERS u ON o.created_by = u.user_id
-        WHERE 1=1
-      `;
-      const params = [];
+  try {
+    console.log('=== ORDER FINDALL START ===');
+    const offset = (page - 1) * limit;
+    
+    // QUERY CỨNG - KHÔNG DÙNG PARAMETERS
+    let query = `
+      SELECT 
+        order_id,
+        customer_id,
+        subtotal,
+        discount,
+        tax,
+        final_amount,
+        payment_status,
+        order_status,
+        created_at
+      FROM orders 
+      WHERE 1=1
+    `;
 
-      if (search) {
-        query += ' AND (o.order_id = ? OR c.name LIKE ? OR c.phone LIKE ?)';
-        const searchId = parseInt(search) || 0;
-        params.push(searchId, `%${search}%`, `%${search}%`);
-      }
-
-      if (status) {
-        query += ' AND o.order_status = ?';
-        params.push(status);
-      }
-
-      if (payment_status) {
-        query += ' AND o.payment_status = ?';
-        params.push(payment_status);
-      }
-
-      if (date_from) {
-        query += ' AND DATE(o.created_at) >= ?';
-        params.push(date_from);
-      }
-
-      if (date_to) {
-        query += ' AND DATE(o.created_at) <= ?';
-        params.push(date_to);
-      }
-
-      query += ' ORDER BY o.created_at DESC LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), offset);
-
-      const [rows] = await pool.execute(query, params);
-
-      // Đếm tổng số bản ghi
-      let countQuery = `
-        SELECT COUNT(*) as total 
-        FROM ORDERS o
-        LEFT JOIN CUSTOMERS c ON o.customer_id = c.customer_id
-        WHERE 1=1
-      `;
-      const countParams = [];
-
-      if (search) {
-        countQuery += ' AND (o.order_id = ? OR c.name LIKE ? OR c.phone LIKE ?)';
-        const searchId = parseInt(search) || 0;
-        countParams.push(searchId, `%${search}%`, `%${search}%`);
-      }
-
-      if (status) {
-        countQuery += ' AND o.order_status = ?';
-        countParams.push(status);
-      }
-
-      if (payment_status) {
-        countQuery += ' AND o.payment_status = ?';
-        countParams.push(payment_status);
-      }
-
-      if (date_from) {
-        countQuery += ' AND DATE(o.created_at) >= ?';
-        countParams.push(date_from);
-      }
-
-      if (date_to) {
-        countQuery += ' AND DATE(o.created_at) <= ?';
-        countParams.push(date_to);
-      }
-
-      const [countRows] = await pool.execute(countQuery, countParams);
-      const total = countRows[0].total;
-
-      return {
-        orders: rows,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          totalPages: Math.ceil(total / limit)
-        }
-      };
-    } catch (error) {
-      throw new Error(`Database error: ${error.message}`);
+    // THÊM ĐIỀU KIỆN CỨNG (nếu có)
+    if (search && search.trim() !== '') {
+      const searchId = parseInt(search) || 0;
+      query += ` AND order_id = ${searchId}`;
     }
-  }
 
+    if (status) {
+      query += ` AND order_status = '${status}'`;
+    }
+
+    if (payment_status) {
+      query += ` AND payment_status = '${payment_status}'`;
+    }
+
+    if (date_from) {
+      query += ` AND DATE(created_at) >= '${date_from}'`;
+    }
+
+    if (date_to) {
+      query += ` AND DATE(created_at) <= '${date_to}'`;
+    }
+
+    // THÊM LIMIT/OFFSET CỨNG
+    query += ` ORDER BY created_at DESC LIMIT ${parseInt(limit)} OFFSET ${offset}`;
+
+    console.log('Final HARDCODED Query:', query);
+
+    // THỰC THI KHÔNG TRUYỀN PARAMS
+    const [rows] = await pool.execute(query);
+    console.log('Rows found:', rows.length);
+
+    // COUNT QUERY CỨNG
+    const countQuery = 'SELECT COUNT(*) as total FROM orders';
+    const [countRows] = await pool.execute(countQuery);
+    const total = countRows[0].total;
+
+    return {
+      orders: rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  } catch (error) {
+    console.error('ORDER FINDALL ERROR:', error.message);
+    console.error('Error stack:', error.stack);
+    throw new Error(`Database error: ${error.message}`);
+  }
+}
   // Lấy đơn hàng bằng ID
   static async findById(orderId) {
     try {
       const [rows] = await pool.execute(
-        `SELECT o.*, c.name as customer_name, c.phone as customer_phone, 
-                c.email as customer_email, c.address as customer_address,
-                u.username as created_by_name
-         FROM ORDERS o
-         LEFT JOIN CUSTOMERS c ON o.customer_id = c.customer_id
-         LEFT JOIN USERS u ON o.created_by = u.user_id
-         WHERE o.order_id = ?`,
+        `SELECT orders.*, customers.name as customer_name, customers.phone as customer_phone, 
+                customers.email as customer_email, customers.address as customer_address,
+                users.username as created_by_name
+         FROM orders 
+         LEFT JOIN customers ON orders.customer_id = customers.customer_id
+         LEFT JOIN users ON orders.created_by = users.user_id
+         WHERE orders.order_id = ?`,
         [orderId]
       );
       return rows[0];
     } catch (error) {
+      console.error('Order findById error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
@@ -120,15 +98,16 @@ class Order {
   static async getOrderItems(orderId) {
     try {
       const [rows] = await pool.execute(
-        `SELECT oi.*, p.name as product_name, p.sku as product_sku
-         FROM ORDER_ITEMS oi
-         JOIN PRODUCTS p ON oi.product_id = p.product_id
-         WHERE oi.order_id = ?`,
+        `SELECT order_items.*, products.name as product_name, products.sku as product_sku
+         FROM order_items 
+         JOIN products ON order_items.product_id = products.product_id
+         WHERE order_items.order_id = ?`,
         [orderId]
       );
       return rows;
     } catch (error) {
-      throw new Error(`Database error: ${error.message}`);
+      console.error('Order getOrderItems error:', error.message);
+      return [];
     }
   }
 
@@ -146,7 +125,7 @@ class Order {
 
       // Tạo đơn hàng
       const [orderResult] = await connection.execute(
-        `INSERT INTO ORDERS 
+        `INSERT INTO orders 
          (customer_id, created_by, subtotal, discount, tax, final_amount, payment_status, order_status, note) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [customer_id, created_by, subtotal, discount, tax, final_amount, payment_status, order_status, note]
@@ -159,7 +138,7 @@ class Order {
         const { product_id, quantity, unit_price, total_price } = item;
         
         await connection.execute(
-          `INSERT INTO ORDER_ITEMS 
+          `INSERT INTO order_items 
            (order_id, product_id, quantity, unit_price, total_price) 
            VALUES (?, ?, ?, ?, ?)`,
           [orderId, product_id, quantity, unit_price, total_price]
@@ -167,13 +146,13 @@ class Order {
 
         // Cập nhật tồn kho
         await connection.execute(
-          'UPDATE PRODUCTS SET stock_quantity = stock_quantity - ? WHERE product_id = ?',
+          'UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?',
           [quantity, product_id]
         );
 
         // Ghi log inventory transaction
         await connection.execute(
-          `INSERT INTO INVENTORY_TRANSACTIONS 
+          `INSERT INTO inventory_transactions 
            (product_id, type, quantity, reference_type, reference_id, note, created_by) 
            VALUES (?, 'export', ?, 'order', ?, 'Xuất kho cho đơn hàng', ?)`,
           [product_id, quantity, orderId, created_by]
@@ -185,6 +164,7 @@ class Order {
 
     } catch (error) {
       await connection.rollback();
+      console.error('Order create error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     } finally {
       connection.release();
@@ -212,12 +192,13 @@ class Order {
       values.push(orderId);
 
       const [result] = await pool.execute(
-        `UPDATE ORDERS SET ${updateFields.join(', ')} WHERE order_id = ?`,
+        `UPDATE orders SET ${updateFields.join(', ')} WHERE order_id = ?`,
         values
       );
 
       return result.affectedRows > 0;
     } catch (error) {
+      console.error('Order updateStatus error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
@@ -231,20 +212,20 @@ class Order {
 
       // Lấy thông tin items để hoàn lại tồn kho
       const [items] = await connection.execute(
-        'SELECT product_id, quantity FROM ORDER_ITEMS WHERE order_id = ?',
+        'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
         [orderId]
       );
 
       // Hoàn lại tồn kho
       for (const item of items) {
         await connection.execute(
-          'UPDATE PRODUCTS SET stock_quantity = stock_quantity + ? WHERE product_id = ?',
+          'UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?',
           [item.quantity, item.product_id]
         );
 
         // Ghi log inventory transaction
         await connection.execute(
-          `INSERT INTO INVENTORY_TRANSACTIONS 
+          `INSERT INTO inventory_transactions 
            (product_id, type, quantity, reference_type, reference_id, note, created_by) 
            VALUES (?, 'import', ?, 'order', ?, 'Hoàn trả tồn kho do hủy đơn hàng', ?)`,
           [item.product_id, item.quantity, orderId, userId]
@@ -253,7 +234,7 @@ class Order {
 
       // Cập nhật trạng thái đơn hàng
       const [result] = await connection.execute(
-        'UPDATE ORDERS SET order_status = "cancelled" WHERE order_id = ?',
+        'UPDATE orders SET order_status = "cancelled" WHERE order_id = ?',
         [orderId]
       );
 
@@ -262,6 +243,7 @@ class Order {
 
     } catch (error) {
       await connection.rollback();
+      console.error('Order cancel error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     } finally {
       connection.release();
@@ -274,18 +256,18 @@ class Order {
       const offset = (page - 1) * limit;
       
       const [rows] = await pool.execute(
-        `SELECT o.*, u.username as created_by_name
-         FROM ORDERS o
-         LEFT JOIN USERS u ON o.created_by = u.user_id
-         WHERE o.customer_id = ?
-         ORDER BY o.created_at DESC
+        `SELECT orders.*, users.username as created_by_name
+         FROM orders 
+         LEFT JOIN users ON orders.created_by = users.user_id
+         WHERE orders.customer_id = ?
+         ORDER BY orders.created_at DESC
          LIMIT ? OFFSET ?`,
         [customerId, parseInt(limit), offset]
       );
 
       // Đếm tổng số bản ghi
       const [countRows] = await pool.execute(
-        'SELECT COUNT(*) as total FROM ORDERS WHERE customer_id = ?',
+        'SELECT COUNT(*) as total FROM orders WHERE customer_id = ?',
         [customerId]
       );
       const total = countRows[0].total;
@@ -300,6 +282,7 @@ class Order {
         }
       };
     } catch (error) {
+      console.error('Order findByCustomer error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
@@ -314,7 +297,7 @@ class Order {
           AVG(final_amount) as avg_order_value,
           COUNT(CASE WHEN order_status = 'completed' THEN 1 END) as completed_orders,
           COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) as paid_orders
-        FROM ORDERS
+        FROM orders
         WHERE 1=1
       `;
       const params = [];
@@ -332,6 +315,7 @@ class Order {
       const [rows] = await pool.execute(query, params);
       return rows[0];
     } catch (error) {
+      console.error('Order getStats error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }

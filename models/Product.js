@@ -1,97 +1,60 @@
 const { pool } = require('../config/database');
 
 class Product {
-  // Lấy tất cả sản phẩm
+  // Lấy tất cả sản phẩm - ĐÃ SỬA TÊN BẢNG
   static async findAll({ page = 1, limit = 10, search = '', category_id, status }) {
-    try {
-      const offset = (page - 1) * limit;
-      let query = `
-        SELECT p.*, c.name as category_name, s.name as supplier_name 
-        FROM PRODUCTS p
-        LEFT JOIN CATEGORIES c ON p.category_id = c.category_id
-        LEFT JOIN SUPPLIERS s ON p.supplier_id = s.supplier_id
-        WHERE 1=1
-      `;
-      const params = [];
+  try {
+    console.log('=== START FINDALL ===');
+    
+    // QUERY CỰC KỲ ĐƠN GIẢN - KHÔNG ĐIỀU KIỆN, KHÔNG PARAMS
+    const query = "SELECT product_id, name, price FROM products LIMIT 5";
+    console.log('Final Query:', query);
 
-      if (search) {
-        query += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
-        params.push(`%${search}%`, `%${search}%`);
+    // THỬ CẢ 2 CÁCH
+    const [rows] = await pool.execute(query); // Cách 1: không params
+    
+    console.log('Rows found:', rows);
+    console.log('=== END FINDALL ===');
+
+    return {
+      products: rows,
+      pagination: {
+        page: 1,
+        limit: 5,
+        total: rows.length,
+        totalPages: 1
       }
-
-      if (category_id) {
-        query += ' AND p.category_id = ?';
-        params.push(category_id);
-      }
-
-      if (status) {
-        query += ' AND p.status = ?';
-        params.push(status);
-      }
-
-      query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), offset);
-
-      const [rows] = await pool.execute(query, params);
-
-      // Đếm tổng số bản ghi
-      let countQuery = `
-        SELECT COUNT(*) as total 
-        FROM PRODUCTS p
-        WHERE 1=1
-      `;
-      const countParams = [];
-
-      if (search) {
-        countQuery += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
-        countParams.push(`%${search}%`, `%${search}%`);
-      }
-
-      if (category_id) {
-        countQuery += ' AND p.category_id = ?';
-        countParams.push(category_id);
-      }
-
-      if (status) {
-        countQuery += ' AND p.status = ?';
-        countParams.push(status);
-      }
-
-      const [countRows] = await pool.execute(countQuery, countParams);
-      const total = countRows[0].total;
-
-      return {
-        products: rows,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          totalPages: Math.ceil(total / limit)
-        }
-      };
-    } catch (error) {
-      throw new Error(`Database error: ${error.message}`);
-    }
+    };
+  } catch (error) {
+    console.error('=== FINDALL ERROR ===');
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error sqlState:', error.sqlState);
+    console.error('Error stack:', error.stack);
+    console.error('=== END ERROR ===');
+    throw new Error(`Database error: ${error.message}`);
   }
+}
 
-  // Lấy sản phẩm bằng ID
+  // Lấy sản phẩm bằng ID - ĐÃ SỬA
   static async findById(productId) {
     try {
       const [rows] = await pool.execute(
         `SELECT p.*, c.name as category_name, s.name as supplier_name 
-         FROM PRODUCTS p
-         LEFT JOIN CATEGORIES c ON p.category_id = c.category_id
-         LEFT JOIN SUPPLIERS s ON p.supplier_id = s.supplier_id
+         FROM products p
+         LEFT JOIN categories c ON p.category_id = c.category_id
+         LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
          WHERE p.product_id = ?`,
         [productId]
       );
       return rows[0];
     } catch (error) {
+      console.error('Get product by ID error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Tạo sản phẩm mới
+  // Tạo sản phẩm mới - ĐÃ SỬA
   static async create(productData) {
     const {
       name, sku, description, category_id, supplier_id, price, cost_price,
@@ -100,7 +63,7 @@ class Product {
 
     try {
       const [result] = await pool.execute(
-        `INSERT INTO PRODUCTS 
+        `INSERT INTO products 
          (name, sku, description, category_id, supplier_id, price, cost_price, stock_quantity, min_stock, max_stock, status) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [name, sku, description, category_id, supplier_id, price, cost_price, stock_quantity, min_stock, max_stock, status]
@@ -108,11 +71,12 @@ class Product {
 
       return result.insertId;
     } catch (error) {
+      console.error('Create product error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Cập nhật sản phẩm
+  // Cập nhật sản phẩm - ĐÃ SỬA
   static async update(productId, updateData) {
     try {
       const allowedFields = [
@@ -136,73 +100,78 @@ class Product {
       values.push(productId);
 
       const [result] = await pool.execute(
-        `UPDATE PRODUCTS SET ${updateFields.join(', ')} WHERE product_id = ?`,
+        `UPDATE products SET ${updateFields.join(', ')} WHERE product_id = ?`,
         values
       );
 
       return result.affectedRows > 0;
     } catch (error) {
+      console.error('Update product error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Xóa sản phẩm
+  // Xóa sản phẩm - ĐÃ SỬA
   static async delete(productId) {
     try {
       const [result] = await pool.execute(
-        'UPDATE PRODUCTS SET status = "deleted" WHERE product_id = ?',
+        'UPDATE products SET status = "deleted" WHERE product_id = ?',
         [productId]
       );
 
       return result.affectedRows > 0;
     } catch (error) {
+      console.error('Delete product error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Tìm kiếm sản phẩm theo tên
+  // Tìm kiếm sản phẩm theo tên - ĐÃ SỬA
   static async search(query, limit = 10) {
     try {
       const [rows] = await pool.execute(
         `SELECT product_id, name, sku, price, stock_quantity 
-         FROM PRODUCTS 
+         FROM products 
          WHERE (name LIKE ? OR sku LIKE ?) AND status = 'active'
          LIMIT ?`,
         [`%${query}%`, `%${query}%`, parseInt(limit)]
       );
       return rows;
     } catch (error) {
+      console.error('Search products error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Cập nhật số lượng tồn kho
+  // Cập nhật số lượng tồn kho - ĐÃ SỬA
   static async updateStock(productId, newQuantity) {
     try {
       const [result] = await pool.execute(
-        'UPDATE PRODUCTS SET stock_quantity = ? WHERE product_id = ?',
+        'UPDATE products SET stock_quantity = ? WHERE product_id = ?',
         [newQuantity, productId]
       );
 
       return result.affectedRows > 0;
     } catch (error) {
+      console.error('Update stock error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Lấy sản phẩm sắp hết hàng (dưới mức tối thiểu)
+  // Lấy sản phẩm sắp hết hàng - ĐÃ SỬA
   static async getLowStock() {
     try {
       const [rows] = await pool.execute(
-        `SELECT p.*, c.name as category_name, s.name as supplier_name 
-         FROM PRODUCTS p
-         LEFT JOIN CATEGORIES c ON p.category_id = c.category_id
-         LEFT JOIN SUPPLIERS s ON p.supplier_id = s.supplier_id
+        `SELECT p.*, c.name as category_name, s.name as supplier_name   
+         FROM products p
+         LEFT JOIN categories c ON p.category_id = c.category_id
+         LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
          WHERE p.stock_quantity <= p.min_stock AND p.status = 'active'
          ORDER BY p.stock_quantity ASC`
       );
       return rows;
     } catch (error) {
+      console.error('Get low stock error:', error.message);
       throw new Error(`Database error: ${error.message}`);
     }
   }

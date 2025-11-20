@@ -243,7 +243,7 @@ const validateStockInStatusUpdate = (req, res, next) => {
 
   next();
 };
-/*
+
 const validateCustomerCreate = (req, res, next) => {
   const { name, phone, email } = req.body;
 
@@ -303,14 +303,16 @@ function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
-*/
+
 module.exports = {
   validateUserCreate,
   validateUserUpdate,
   validateProductCreate,
   validateProductUpdate,
-  //validateCustomerCreate,
-  //validateCustomerUpdate,
+  validateCustomerCreate,
+  validateCustomerUpdate,
   validateOrderCreate,
-  validateOrderStatusUpdate
+  validateOrderStatusUpdate,
+  validateStockInCreate,
+  validateStockInStatusUpdate
 };
