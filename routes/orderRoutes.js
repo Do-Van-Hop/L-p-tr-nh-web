@@ -7,14 +7,13 @@ const { validateOrderCreate, validateOrderStatusUpdate } = require('../middlewar
 const router = express.Router();
 
 router.use(authMiddleware);
+
 router.get('/', orderController.getAllOrders);
 router.get('/stats', orderController.getOrderStats);
 router.get('/customer/:customerId', orderController.getOrdersByCustomer);
 router.get('/:id', orderController.getOrderById);
-
-router.delete('/:id/cancel', roleMiddleware(['manager']), orderController.cancelOrder);
-
 router.post('/', validateOrderCreate, orderController.createOrder);
 router.patch('/:id/status', validateOrderStatusUpdate, orderController.updateOrderStatus);
+router.delete('/:id/cancel', roleMiddleware(['manager']), orderController.cancelOrder); // ✅ ĐÃ SỬA THỨ TỰ
 
 module.exports = router;

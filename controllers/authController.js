@@ -45,7 +45,10 @@ const authController = {
         user_id: user.user_id,
         username: user.username,
         role: user.role,
-        is_active: user.is_active
+        is_active: user.is_active,
+        full_name: user.full_name,
+        email: user.email,
+        phone: user.phone
       };
 
       res.json({
@@ -56,7 +59,6 @@ const authController = {
           token
         }
       });
-
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({
@@ -70,7 +72,6 @@ const authController = {
   getMe: async (req, res) => {
     try {
       const user = await User.findById(req.user.user_id);
-      
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -78,9 +79,20 @@ const authController = {
         });
       }
 
+      const userResponse = {
+        user_id: user.user_id,
+        username: user.username,
+        role: user.role,
+        is_active: user.is_active,
+        full_name: user.full_name,
+        email: user.email,
+        phone: user.phone,
+        created_at: user.created_at
+      };
+
       res.json({
         success: true,
-        data: { user }
+        data: { user: userResponse }
       });
     } catch (error) {
       console.error('Get me error:', error);

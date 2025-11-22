@@ -1,40 +1,83 @@
 const { pool } = require('../config/database');
 
 class Product {
-  // Lấy tất cả sản phẩm - ĐÃ SỬA TÊN BẢNG
+  // Lấy tất cả sản phẩm
   static async findAll({ page = 1, limit = 10, search = '', category_id, status }) {
-  try {
-    console.log('=== START FINDALL ===');
-    
-    // QUERY CỰC KỲ ĐƠN GIẢN - KHÔNG ĐIỀU KIỆN, KHÔNG PARAMS
-    const query = "SELECT product_id, name, price FROM products LIMIT 5";
-    console.log('Final Query:', query);
+    try {
+      const offset = (page - 1) * limit;
+      
+      let query = `
+        SELECT 
+          p.product_id, p.name, p.sku, p.description, p.price, p.cost_price,
+          p.stock_quantity, p.min_stock, p.max_stock, p.status, p.created_at,
+          c.name as category_name, s.name as supplier_name
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+        WHERE 1=1
+      `;
+      const params = [];
 
-    // THỬ CẢ 2 CÁCH
-    const [rows] = await pool.execute(query); // Cách 1: không params
-    
-    console.log('Rows found:', rows);
-    console.log('=== END FINDALL ===');
-
-    return {
-      products: rows,
-      pagination: {
-        page: 1,
-        limit: 5,
-        total: rows.length,
-        totalPages: 1
+      if (search && search.trim() !== '') {
+        query += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`);
       }
-    };
-  } catch (error) {
-    console.error('=== FINDALL ERROR ===');
-    console.error('Error message:', error.message);
-    console.error('Error code:', error.code);
-    console.error('Error sqlState:', error.sqlState);
-    console.error('Error stack:', error.stack);
-    console.error('=== END ERROR ===');
-    throw new Error(`Database error: ${error.message}`);
+
+      if (category_id) {
+        query += ' AND p.category_id = ?';
+        params.push(category_id);
+      }
+
+      if (status) {
+        query += ' AND p.status = ?';
+        params.push(status);
+      }
+
+      query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
+      params.push(parseInt(limit), offset);
+
+      const [rows] = await pool.execute(query, params);
+
+      // Count query
+      let countQuery = `
+        SELECT COUNT(*) as total 
+        FROM products p 
+        WHERE 1=1
+      `;
+      const countParams = [];
+
+      if (search && search.trim() !== '') {
+        countQuery += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
+        countParams.push(`%${search}%`, `%${search}%`);
+      }
+
+      if (category_id) {
+        countQuery += ' AND p.category_id = ?';
+        countParams.push(category_id);
+      }
+
+      if (status) {
+        countQuery += ' AND p.status = ?';
+        countParams.push(status);
+      }
+
+      const [countRows] = await pool.execute(countQuery, countParams);
+      const total = countRows[0].total;
+
+      return {
+        products: rows,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('PRODUCT FINDALL ERROR:', error.message);
+      throw error;
+    }
   }
-}
 
   // Lấy sản phẩm bằng ID - ĐÃ SỬA
   static async findById(productId) {

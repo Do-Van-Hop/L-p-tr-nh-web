@@ -5,11 +5,12 @@ class StockInOrder {
   static async findAll({ page = 1, limit = 10, search = '', status, supplier_id, date_from, date_to }) {
     try {
       const offset = (page - 1) * limit;
+      
       let query = `
         SELECT s.*, sup.name as supplier_name, u.username as created_by_name
-        FROM STOCK_IN_ORDERS s
-        LEFT JOIN SUPPLIERS sup ON s.supplier_id = sup.supplier_id
-        LEFT JOIN USERS u ON s.created_by = u.user_id
+        FROM stock_in_orders s
+        LEFT JOIN suppliers sup ON s.supplier_id = sup.supplier_id
+        LEFT JOIN users u ON s.created_by = u.user_id
         WHERE 1=1
       `;
       const params = [];
@@ -45,11 +46,11 @@ class StockInOrder {
 
       const [rows] = await pool.execute(query, params);
 
-      // Đếm tổng số bản ghi
+      // Count query
       let countQuery = `
-        SELECT COUNT(*) as total 
-        FROM STOCK_IN_ORDERS s
-        LEFT JOIN SUPPLIERS sup ON s.supplier_id = sup.supplier_id
+        SELECT COUNT(*) as total
+        FROM stock_in_orders s
+        LEFT JOIN suppliers sup ON s.supplier_id = sup.supplier_id
         WHERE 1=1
       `;
       const countParams = [];
@@ -102,11 +103,11 @@ class StockInOrder {
     try {
       const [rows] = await pool.execute(
         `SELECT s.*, sup.name as supplier_name, sup.contact_person, sup.phone as supplier_phone,
-                u.username as created_by_name
-         FROM STOCK_IN_ORDERS s
-         LEFT JOIN SUPPLIERS sup ON s.supplier_id = sup.supplier_id
-         LEFT JOIN USERS u ON s.created_by = u.user_id
-         WHERE s.stock_in_order_id = ?`,
+        u.username as created_by_name
+        FROM stock_in_orders s
+        LEFT JOIN suppliers sup ON s.supplier_id = sup.supplier_id
+        LEFT JOIN users u ON s.created_by = u.user_id
+        WHERE s.stock_in_order_id = ?`,
         [stockInOrderId]
       );
       return rows[0];
@@ -120,9 +121,9 @@ class StockInOrder {
     try {
       const [rows] = await pool.execute(
         `SELECT si.*, p.name as product_name, p.sku as product_sku, p.cost_price as current_cost_price
-         FROM STOCK_IN_ITEMS si
-         JOIN PRODUCTS p ON si.product_id = p.product_id
-         WHERE si.stock_in_order_id = ?`,
+        FROM stock_in_items si
+        JOIN products p ON si.product_id = p.product_id
+        WHERE si.stock_in_order_id = ?`,
         [stockInOrderId]
       );
       return rows;
@@ -134,7 +135,6 @@ class StockInOrder {
   // Tạo phiếu nhập mới
   static async create(stockInData, items) {
     const connection = await pool.getConnection();
-    
     try {
       await connection.beginTransaction();
 
@@ -144,9 +144,8 @@ class StockInOrder {
 
       // Tạo phiếu nhập
       const [orderResult] = await connection.execute(
-        `INSERT INTO STOCK_IN_ORDERS 
-         (supplier_id, created_by, total_amount, status, note) 
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO stock_in_orders (supplier_id, created_by, total_amount, status, note)
+        VALUES (?, ?, ?, ?, ?)`,
         [supplier_id, created_by, total_amount, status, note]
       );
 
@@ -155,11 +154,9 @@ class StockInOrder {
       // Thêm các items vào phiếu nhập
       for (const item of items) {
         const { product_id, quantity, unit_cost, total_price } = item;
-        
         await connection.execute(
-          `INSERT INTO STOCK_IN_ITEMS 
-           (stock_in_order_id, product_id, quantity, unit_cost, total_price) 
-           VALUES (?, ?, ?, ?, ?)`,
+          `INSERT INTO stock_in_items (stock_in_order_id, product_id, quantity, unit_cost, total_price)
+          VALUES (?, ?, ?, ?, ?)`,
           [stockInOrderId, product_id, quantity, unit_cost, total_price]
         );
 
@@ -167,21 +164,21 @@ class StockInOrder {
         if (status === 'confirmed') {
           // Cập nhật tồn kho
           await connection.execute(
-            'UPDATE PRODUCTS SET stock_quantity = stock_quantity + ? WHERE product_id = ?',
+            'UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?',
             [quantity, product_id]
           );
 
           // Cập nhật giá vốn bằng giá nhập mới nhất
           await connection.execute(
-            'UPDATE PRODUCTS SET cost_price = ? WHERE product_id = ?',
+            'UPDATE products SET cost_price = ? WHERE product_id = ?',
             [unit_cost, product_id]
           );
 
           // Ghi log inventory transaction
           await connection.execute(
-            `INSERT INTO INVENTORY_TRANSACTIONS 
-             (product_id, type, quantity, reference_type, reference_id, note, created_by) 
-             VALUES (?, 'import', ?, 'stock_in', ?, 'Nhập kho từ phiếu nhập', ?)`,
+            `INSERT INTO inventory_transactions
+            (product_id, type, quantity, reference_type, reference_id, note, created_by)
+            VALUES (?, 'import', ?, 'stock_in', ?, 'Nhập kho từ phiếu nhập', ?)`,
             [product_id, quantity, stockInOrderId, created_by]
           );
         }
@@ -189,7 +186,6 @@ class StockInOrder {
 
       await connection.commit();
       return stockInOrderId;
-
     } catch (error) {
       await connection.rollback();
       throw new Error(`Database error: ${error.message}`);
@@ -201,36 +197,35 @@ class StockInOrder {
   // Cập nhật trạng thái phiếu nhập
   static async updateStatus(stockInOrderId, status, userId) {
     const connection = await pool.getConnection();
-    
     try {
       await connection.beginTransaction();
 
-      //cập nhật tồn kho
+      // Cập nhật tồn kho nếu xác nhận phiếu nhập
       if (status === 'confirmed') {
         // Lấy thông tin hàng
         const [items] = await connection.execute(
-          'SELECT product_id, quantity, unit_cost FROM STOCK_IN_ITEMS WHERE stock_in_order_id = ?',
+          'SELECT product_id, quantity, unit_cost FROM stock_in_items WHERE stock_in_order_id = ?',
           [stockInOrderId]
         );
 
         for (const item of items) {
           // Cập nhật tồn kho
           await connection.execute(
-            'UPDATE PRODUCTS SET stock_quantity = stock_quantity + ? WHERE product_id = ?',
+            'UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?',
             [item.quantity, item.product_id]
           );
 
           // Cập nhật giá vốn
           await connection.execute(
-            'UPDATE PRODUCTS SET cost_price = ? WHERE product_id = ?',
+            'UPDATE products SET cost_price = ? WHERE product_id = ?',
             [item.unit_cost, item.product_id]
           );
 
           // Ghi log inventory transaction
           await connection.execute(
-            `INSERT INTO INVENTORY_TRANSACTIONS 
-             (product_id, type, quantity, reference_type, reference_id, note, created_by) 
-             VALUES (?, 'import', ?, 'stock_in', ?, 'Nhập kho từ phiếu nhập', ?)`,
+            `INSERT INTO inventory_transactions
+            (product_id, type, quantity, reference_type, reference_id, note, created_by)
+            VALUES (?, 'import', ?, 'stock_in', ?, 'Nhập kho từ phiếu nhập', ?)`,
             [item.product_id, item.quantity, stockInOrderId, userId]
           );
         }
@@ -238,13 +233,12 @@ class StockInOrder {
 
       // Cập nhật trạng thái phiếu nhập
       const [result] = await connection.execute(
-        'UPDATE STOCK_IN_ORDERS SET status = ? WHERE stock_in_order_id = ?',
+        'UPDATE stock_in_orders SET status = ? WHERE stock_in_order_id = ?',
         [status, stockInOrderId]
       );
 
       await connection.commit();
       return result.affectedRows > 0;
-
     } catch (error) {
       await connection.rollback();
       throw new Error(`Database error: ${error.message}`);
@@ -257,10 +251,9 @@ class StockInOrder {
   static async cancel(stockInOrderId) {
     try {
       const [result] = await pool.execute(
-        'UPDATE STOCK_IN_ORDERS SET status = "cancelled" WHERE stock_in_order_id = ?',
+        'UPDATE stock_in_orders SET status = "cancelled" WHERE stock_in_order_id = ?',
         [stockInOrderId]
       );
-
       return result.affectedRows > 0;
     } catch (error) {
       throw new Error(`Database error: ${error.message}`);
@@ -271,13 +264,13 @@ class StockInOrder {
   static async getStats(dateFrom, dateTo) {
     try {
       let query = `
-        SELECT 
+        SELECT
           COUNT(*) as total_orders,
           SUM(total_amount) as total_value,
           AVG(total_amount) as avg_order_value,
           COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed_orders,
           COUNT(CASE WHEN status = 'draft' THEN 1 END) as draft_orders
-        FROM STOCK_IN_ORDERS
+        FROM stock_in_orders
         WHERE 1=1
       `;
       const params = [];

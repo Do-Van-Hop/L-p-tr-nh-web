@@ -5,9 +5,7 @@ const reportController = {
   getSalesReport: async (req, res) => {
     try {
       const { period = 'daily', date_from, date_to } = req.query;
-
       let dateFormat, groupBy;
-      
       switch (period) {
         case 'daily':
           dateFormat = '%Y-%m-%d';
@@ -27,14 +25,14 @@ const reportController = {
       }
 
       let query = `
-        SELECT 
+        SELECT
           DATE_FORMAT(created_at, ?) as period,
           COUNT(*) as total_orders,
           SUM(final_amount) as total_revenue,
           AVG(final_amount) as avg_order_value,
           COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) as paid_orders,
           COUNT(CASE WHEN order_status = 'completed' THEN 1 END) as completed_orders
-        FROM ORDERS
+        FROM orders
         WHERE order_status != 'cancelled'
       `;
       const params = [dateFormat];
@@ -72,18 +70,17 @@ const reportController = {
   getTopProducts: async (req, res) => {
     try {
       const { limit = 10, date_from, date_to } = req.query;
-
       let query = `
-        SELECT 
+        SELECT
           p.product_id,
           p.name,
           p.sku,
           SUM(oi.quantity) as total_sold,
           SUM(oi.total_price) as total_revenue,
           COUNT(DISTINCT oi.order_id) as total_orders
-        FROM ORDER_ITEMS oi
-        JOIN PRODUCTS p ON oi.product_id = p.product_id
-        JOIN ORDERS o ON oi.order_id = o.order_id
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.product_id
+        JOIN orders o ON oi.order_id = o.order_id
         WHERE o.order_status = 'completed'
       `;
       const params = [];
@@ -125,7 +122,7 @@ const reportController = {
   getInventoryReport: async (req, res) => {
     try {
       const [rows] = await pool.execute(`
-        SELECT 
+        SELECT
           p.product_id,
           p.name,
           p.sku,
@@ -136,18 +133,17 @@ const reportController = {
           p.price,
           c.name as category_name,
           s.name as supplier_name,
-          CASE 
+          CASE
             WHEN p.stock_quantity <= p.min_stock THEN 'low'
-            WHEN p.stock_quantity >= p.max_stock THEN 'high' 
+            WHEN p.stock_quantity >= p.max_stock THEN 'high'
             ELSE 'normal'
           END as stock_status
-        FROM PRODUCTS p
-        LEFT JOIN CATEGORIES c ON p.category_id = c.category_id
-        LEFT JOIN SUPPLIERS s ON p.supplier_id = s.supplier_id
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
         WHERE p.status = 'active'
         ORDER BY stock_status, p.stock_quantity ASC
       `);
-
       const summary = {
         total_products: rows.length,
         low_stock: rows.filter(p => p.stock_status === 'low').length,
@@ -158,7 +154,7 @@ const reportController = {
 
       res.json({
         success: true,
-        data: { 
+        data: {
           products: rows,
           summary
         }

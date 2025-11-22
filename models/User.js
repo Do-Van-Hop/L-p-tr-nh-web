@@ -6,7 +6,7 @@ class User {
   static async findByUsername(username) {
     try {
       const [rows] = await pool.execute(
-        'SELECT * FROM USERS WHERE username = ? AND is_active = "active"',
+        'SELECT * FROM users WHERE username = ? AND is_active = "active"',
         [username]
       );
       return rows[0];
@@ -19,7 +19,7 @@ class User {
   static async findById(userId) {
     try {
       const [rows] = await pool.execute(
-        'SELECT user_id, username, role, is_active, created_at FROM USERS WHERE user_id = ?',
+        'SELECT user_id, username, role, is_active, created_at FROM users WHERE user_id = ?',
         [userId]
       );
       return rows[0];
@@ -30,17 +30,14 @@ class User {
 
   // Tạo user mới
   static async create(userData) {
-    const { username, password, role = 'staff' } = userData;
-    
+    const { username, password, role = 'staff', full_name, email, phone } = userData;
     try {
       // Mã hóa password
       const hashedPassword = await bcrypt.hash(password, 12);
-      
       const [result] = await pool.execute(
-        'INSERT INTO USERS (username, password_hash, role) VALUES (?, ?, ?)',
-        [username, hashedPassword, role]
+        'INSERT INTO users (username, password_hash, role, full_name, email, phone) VALUES (?, ?, ?, ?, ?, ?)',
+        [username, hashedPassword, role, full_name, email, phone]
       );
-      
       return result.insertId;
     } catch (error) {
       throw new Error(`Database error: ${error.message}`);
@@ -56,13 +53,14 @@ class User {
   static async findAll() {
     try {
       const [rows] = await pool.execute(
-        'SELECT user_id, username, role, is_active, created_at FROM USERS ORDER BY created_at DESC'
+        'SELECT user_id, username, role, is_active, full_name, email, phone, created_at FROM users ORDER BY created_at DESC'
       );
       return rows;
     } catch (error) {
       throw new Error(`Database error: ${error.message}`);
     }
   }
+
   // Cập nhật thông tin user
   static async update(userId, updateData) {
     try {
@@ -84,10 +82,9 @@ class User {
       values.push(userId);
 
       const [result] = await pool.execute(
-        `UPDATE USERS SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`,
+        `UPDATE users SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`,
         values
       );
-
       return result.affectedRows > 0;
     } catch (error) {
       throw new Error(`Database error: ${error.message}`);
@@ -98,38 +95,35 @@ class User {
   static async changePassword(userId, newPassword) {
     try {
       const hashedPassword = await bcrypt.hash(newPassword, 12);
-      
       const [result] = await pool.execute(
-        'UPDATE USERS SET password_hash = ? WHERE user_id = ?',
+        'UPDATE users SET password_hash = ? WHERE user_id = ?',
         [hashedPassword, userId]
       );
-
       return result.affectedRows > 0;
     } catch (error) {
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Xóa use
+  // Xóa user
   static async delete(userId) {
     try {
       const [result] = await pool.execute(
-        'UPDATE USERS SET is_active = "inactive" WHERE user_id = ?',
+        'UPDATE users SET is_active = "inactive" WHERE user_id = ?',
         [userId]
       );
-
       return result.affectedRows > 0;
     } catch (error) {
       throw new Error(`Database error: ${error.message}`);
     }
   }
 
-  // Lấy user bằng ID (chi tiết tt)
+  // Lấy user bằng ID (chi tiết thông tin)
   static async getById(userId) {
     try {
       const [rows] = await pool.execute(
-        `SELECT user_id, username, role, is_active, full_name, email, phone, created_at 
-         FROM USERS WHERE user_id = ?`,
+        `SELECT user_id, username, role, is_active, full_name, email, phone, created_at
+        FROM users WHERE user_id = ?`,
         [userId]
       );
       return rows[0];
