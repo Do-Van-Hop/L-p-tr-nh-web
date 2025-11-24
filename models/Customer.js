@@ -1,3 +1,4 @@
+const { parse } = require('dotenv');
 const { pool } = require('../config/database');
 
 class Customer {
@@ -179,29 +180,83 @@ class Customer {
   static async getPurchaseHistory(customerId, { page = 1, limit = 10 } = {}) {
     try {
       const offset = (page - 1) * limit;
+      const limitNum = parseInt(limit);
+      const offsetNum = parseInt(offset);
       
-      const [rows] = await pool.execute(
-      `SELECT * FROM orders 
-       WHERE customer_id = ?
-       ORDER BY created_at DESC
-       LIMIT ? OFFSET ?`,
-      [customerId, parseInt(limit), offset]
+      // lấy danh sách đơn hàng với phân trang
+      const [orders] = await pool.query(
+      `SELECT 
+        o.order_id,
+        o.customer_id,
+        o.created_by,
+        o.subtotal,
+        o.tax,
+        o.final_amount,
+        o.payment_status,
+        o.order_status,
+        o.created_at
+       FROM orders o
+       WHERE o.customer_id = ?
+       ORDER BY o.created_at DESC
+       LIMIT ${limitNum} OFFSET ${offsetNum}`,
+      [customerId]
     );
+    // nếu không có đơn hàng nào
+    if (orders.length === 0){
+      return {
+        orders: [],
+        pagination : {
+          page: parseInt(page),
+          limit: limitNum,
+          total: 0,
+          totalPages: 0
+        }
+      };
+    }
+    // lấy danh sách order_id
+    const orderIds = orders.map(o => o.order_id);
 
-      // Đếm tổng số bản ghi
-      const [countRows] = await pool.execute(
+    const placeholders = orderIds.map(() => '?').join(',');
+
+    
+    // lấy chi tiết sản phẩm
+    const [orderItems] = await pool.query(
+      `SELECT
+        oi.order_item_id,
+        oi.order_id,
+        oi.product_id,
+        oi.quantity,
+        oi.unit_price,
+        p.name
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.product_id
+      WHERE oi.order_id IN (${placeholders})`,
+    orderIds, 
+    );
+    //gắn Item vào từng order
+    const ordersWithItems = orders.map(order => {
+      const items = orderItems.filter(item => item.order_id === order.order_id);
+      return {
+        ...order,
+        items: items
+      };
+    });
+
+
+      // Đếm tổng số đơn hàng
+      const [countRows] = await pool.query(
         'SELECT COUNT(*) as total FROM orders WHERE customer_id = ?',
         [customerId]
       );
-      const total = countRows[0].total;
+      const total = countRows[0]?.total || 0;
 
       return {
-        orders: rows,
+        orders: ordersWithItems,
         pagination: {
           page: parseInt(page),
-          limit: parseInt(limit),
+          limit: limitNum,
           total,
-          totalPages: Math.ceil(total / limit)
+          totalPages: Math.ceil(total / limitNum)
         }
       };
     } catch (error) {
