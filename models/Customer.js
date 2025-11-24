@@ -3,54 +3,57 @@ const { pool } = require('../config/database');
 class Customer {
 // Lấy tất cả khách hàng
   static async findAll({ page = 1, limit = 10, search = '' }) {
-    try {
-      const offset = (page - 1) * limit;
-      
-      let query = `
-        SELECT customer_id, name, phone, email, address, loyalty_points, created_at 
-        FROM customers 
-        WHERE 1=1
-      `;
-      const params = [];
+      try {
+          const pageNum = parseInt(page) || 1;
+          const limitNum = parseInt(limit) || 10;
+          const offset = (pageNum - 1) * limitNum;
 
-      if (search && search.trim() !== '') {
-        query += ' AND (name LIKE ? OR phone LIKE ? OR email LIKE ?)';
-        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+          let query = `
+              SELECT customer_id, name, phone, email, address, loyalty_points, created_at
+              FROM customers
+              WHERE 1=1
+          `;
+
+          const params = [];
+
+          if (search && search.trim() !== '') {
+              query += ' AND (name LIKE ? OR phone LIKE ? OR email LIKE ?)';
+              params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+          }
+
+          query += ` ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+
+          console.log('🔍 Customer Query:', query);
+          console.log('📊 Customer Params:', params);
+
+          const [rows] = await pool.execute(query, params);
+
+          // Count query
+          let countQuery = 'SELECT COUNT(*) as total FROM customers WHERE 1=1';
+          const countParams = [];
+
+          if (search && search.trim() !== '') {
+              countQuery += ' AND (name LIKE ? OR phone LIKE ? OR email LIKE ?)';
+              countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+          }
+
+          const [countRows] = await pool.execute(countQuery, countParams);
+          const total = countRows[0].total;
+
+          return {
+              customers: rows,
+              pagination: {
+                  page: pageNum,
+                  limit: limitNum,
+                  total,
+                  totalPages: Math.ceil(total / limitNum)
+              }
+          };
+      } catch (error) {
+          console.error('CUSTOMER FINDALL ERROR:', error.message);
+          throw error;
       }
-
-      query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), offset);
-
-      const [rows] = await pool.execute(query, params);
-
-      // Count query
-      let countQuery = 'SELECT COUNT(*) as total FROM customers WHERE 1=1';
-      const countParams = [];
-
-      if (search && search.trim() !== '') {
-        countQuery += ' AND (name LIKE ? OR phone LIKE ? OR email LIKE ?)';
-        countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
-      }
-
-      const [countRows] = await pool.execute(countQuery, countParams);
-      const total = countRows[0].total;
-
-      return {
-        customers: rows,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          totalPages: Math.ceil(total / limit)
-        }
-      };
-    } catch (error) {
-      console.error('CUSTOMER FINDALL ERROR:', error.message);
-      throw error;
-    }
   }
-
-
   // Tt khách hàng bằng ID
   static async findById(customerId) {
     try {

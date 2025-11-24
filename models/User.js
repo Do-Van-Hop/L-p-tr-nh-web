@@ -50,16 +50,22 @@ class User {
   }
 
   // Lấy danh sách users (cho quản lý)
-  static async findAll() {
+static async findAll() {
     try {
-      const [rows] = await pool.execute(
-        'SELECT user_id, username, role, is_active, full_name, email, phone, created_at FROM users ORDER BY created_at DESC'
-      );
-      return rows;
+        const query = `
+            SELECT user_id, username, role, is_active, full_name, email, phone, created_at 
+            FROM users 
+            ORDER BY created_at DESC
+        `;
+
+        const [rows] = await pool.execute(query);
+        return rows;
+
     } catch (error) {
-      throw new Error(`Database error: ${error.message}`);
+        console.error('USER FINDALL ERROR:', error.message);
+        throw error;
     }
-  }
+}
 
   // Cập nhật thông tin user
   static async update(userId, updateData) {

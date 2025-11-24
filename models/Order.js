@@ -3,97 +3,101 @@ const { pool } = require('../config/database');
 class Order {
   // Lấy tất cả đơn hàng
   static async findAll({ page = 1, limit = 10, search = '', status, payment_status, date_from, date_to }) {
-    try {
-      const offset = (page - 1) * limit;
-      
-      let query = `
-        SELECT 
-          order_id, customer_id, subtotal, discount, tax, final_amount,
-          payment_status, order_status, created_at, note
-        FROM orders 
-        WHERE 1=1
-      `;
-      const params = [];
+      try {
+          const pageNum = parseInt(page) || 1;
+          const limitNum = parseInt(limit) || 10;
+          const offset = (pageNum - 1) * limitNum;
 
-      if (search && search.trim() !== '') {
-        query += ' AND (order_id = ? OR note LIKE ?)';
-        const searchId = parseInt(search) || 0;
-        params.push(searchId, `%${search}%`);
+          let query = `
+              SELECT
+                  order_id, customer_id, subtotal, discount, tax, final_amount,
+                  payment_status, order_status, created_at, note
+              FROM orders
+              WHERE 1=1
+          `;
+
+          const params = [];
+
+          if (search && search.trim() !== '') {
+              query += ' AND (order_id = ? OR note LIKE ?)';
+              const searchId = parseInt(search) || 0;
+              params.push(searchId, `%${search}%`);
+          }
+
+          if (status) {
+              query += ' AND order_status = ?';
+              params.push(status);
+          }
+
+          if (payment_status) {
+              query += ' AND payment_status = ?';
+              params.push(payment_status);
+          }
+
+          if (date_from) {
+              query += ' AND DATE(created_at) >= ?';
+              params.push(date_from);
+          }
+
+          if (date_to) {
+              query += ' AND DATE(created_at) <= ?';
+              params.push(date_to);
+          }
+
+          query += ` ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+
+          console.log('🔍 Order Query:', query);
+          console.log('📊 Order Params:', params);
+
+          const [rows] = await pool.execute(query, params);
+
+          // Count query
+          let countQuery = 'SELECT COUNT(*) as total FROM orders WHERE 1=1';
+          const countParams = [];
+
+          if (search && search.trim() !== '') {
+              countQuery += ' AND (order_id = ? OR note LIKE ?)';
+              const searchId = parseInt(search) || 0;
+              countParams.push(searchId, `%${search}%`);
+          }
+
+          if (status) {
+              countQuery += ' AND order_status = ?';
+              countParams.push(status);
+          }
+
+          if (payment_status) {
+              countQuery += ' AND payment_status = ?';
+              countParams.push(payment_status);
+          }
+
+          if (date_from) {
+              countQuery += ' AND DATE(created_at) >= ?';
+              countParams.push(date_from);
+          }
+
+          if (date_to) {
+              countQuery += ' AND DATE(created_at) <= ?';
+              countParams.push(date_to);
+          }
+
+          const [countRows] = await pool.execute(countQuery, countParams);
+          const total = countRows[0].total;
+
+          return {
+              orders: rows,
+              pagination: {
+                  page: pageNum,
+                  limit: limitNum,
+                  total,
+                  totalPages: Math.ceil(total / limitNum)
+              }
+          };
+      } catch (error) {
+          console.error('ORDER FINDALL ERROR:', error.message);
+          throw error;
       }
-
-      if (status) {
-        query += ' AND order_status = ?';
-        params.push(status);
-      }
-
-      if (payment_status) {
-        query += ' AND payment_status = ?';
-        params.push(payment_status);
-      }
-
-      if (date_from) {
-        query += ' AND DATE(created_at) >= ?';
-        params.push(date_from);
-      }
-
-      if (date_to) {
-        query += ' AND DATE(created_at) <= ?';
-        params.push(date_to);
-      }
-
-      query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-      params.push(parseInt(limit), offset);
-
-      const [rows] = await pool.execute(query, params);
-
-      // Count query
-      let countQuery = 'SELECT COUNT(*) as total FROM orders WHERE 1=1';
-      const countParams = [];
-
-      if (search && search.trim() !== '') {
-        countQuery += ' AND (order_id = ? OR note LIKE ?)';
-        const searchId = parseInt(search) || 0;
-        countParams.push(searchId, `%${search}%`);
-      }
-
-      if (status) {
-        countQuery += ' AND order_status = ?';
-        countParams.push(status);
-      }
-
-      if (payment_status) {
-        countQuery += ' AND payment_status = ?';
-        countParams.push(payment_status);
-      }
-
-      if (date_from) {
-        countQuery += ' AND DATE(created_at) >= ?';
-        countParams.push(date_from);
-      }
-
-      if (date_to) {
-        countQuery += ' AND DATE(created_at) <= ?';
-        countParams.push(date_to);
-      }
-
-      const [countRows] = await pool.execute(countQuery, countParams);
-      const total = countRows[0].total;
-
-      return {
-        orders: rows,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          totalPages: Math.ceil(total / limit)
-        }
-      };
-    } catch (error) {
-      console.error('ORDER FINDALL ERROR:', error.message);
-      throw error;
-    }
   }
-
   // Lấy đơn hàng bằng ID
   static async findById(orderId) {
     try {
