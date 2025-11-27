@@ -1,6 +1,7 @@
 // CustomerManagement.tsx
 import React, { useState, useEffect } from 'react';
 import './customer.css';
+
 // Types
 interface Customer {
   customer_id: number;
@@ -10,6 +11,8 @@ interface Customer {
   address?: string;
   loyalty_points: number;
   created_at: string;
+  total_orders?: number;
+  last_purchase_date?: string;
 }
 
 interface CustomerFormData {
@@ -27,15 +30,7 @@ interface PaginationInfo {
   totalPages: number;
 }
 
-interface CustomersResponse {
-  success: boolean;
-  data: {
-    customers: Customer[];
-  };
-  pagination: PaginationInfo;
-}
-
-// Customer Service với error handling tốt hơn
+// Customer Service
 class CustomerService {
   private baseURL = 'http://localhost:5000/api';
 
@@ -82,11 +77,10 @@ class CustomerService {
       headers: this.getAuthHeaders(),
     });
 
-    const result = await this.handleResponse<CustomersResponse>(response);
+    const result = await this.handleResponse<{ data: Customer[], pagination: PaginationInfo }>(response);
     
-    // Đảm bảo structure luôn đúng
     return {
-      customers: result.data?.customers || [],
+      customers: result.data || [],
       pagination: result.pagination || {
         page,
         limit,
@@ -144,14 +138,20 @@ class CustomerService {
     return result.data.customers;
   }
 
-  async updateLoyaltyPoints(id: number, points: number): Promise<void> {
-    const response = await fetch(`${this.baseURL}/customers/${id}/loyalty-points`, {
-      method: 'PATCH',
+  async getPurchaseHistory(customerId: number, page: number = 1, limit: number = 10): Promise<any> {
+    const response = await fetch(`${this.baseURL}/customers/${customerId}/purchase-history?page=${page}&limit=${limit}`, {
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ points }),
     });
 
-    await this.handleResponse(response);
+    return await this.handleResponse(response);
+  }
+
+  async getPurchaseStats(customerId: number): Promise<any> {
+    const response = await fetch(`${this.baseURL}/customers/${customerId}/purchase-stats`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    return await this.handleResponse(response);
   }
 }
 
@@ -183,6 +183,12 @@ const CustomerList: React.FC<CustomerListProps> = ({
     } catch {
       return dateString;
     }
+  };
+
+  const getPointsStatus = (points: number) => {
+    if (points >= 1000) return { text: 'VIP', class: 'high' };
+    if (points >= 500) return { text: 'Thường xuyên', class: 'medium' };
+    return { text: 'Mới', class: 'low' };
   };
 
   const renderPagination = () => {
@@ -264,55 +270,71 @@ const CustomerList: React.FC<CustomerListProps> = ({
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Tên</th>
-                <th>Số điện thoại</th>
+                <th>Thông tin khách hàng</th>
+                <th>Điện thoại</th>
                 <th>Email</th>
                 <th>Điểm tích lũy</th>
+                <th>Địa chỉ</th>
                 <th>Ngày tạo</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {customers.map((customer) => (
-                <tr key={customer.customer_id}>
-                  <td>{customer.customer_id}</td>
-                  <td>{customer.name}</td>
-                  <td>{customer.phone || '-'}</td>
-                  <td>{customer.email || '-'}</td>
-                  <td>
-                    <span className="loyalty-badge">{customer.loyalty_points}</span>
-                  </td>
-                  <td>{formatDate(customer.created_at)}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        className="btn-info"
-                        onClick={() => onViewDetails(customer)}
-                        title="Xem chi tiết"
-                        disabled={loading}
-                      >
-                        👁️
-                      </button>
-                      <button
-                        className="btn-warning"
-                        onClick={() => onEdit(customer)}
-                        title="Sửa"
-                        disabled={loading}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className="btn-danger"
-                        onClick={() => onDelete(customer)}
-                        title="Xóa"
-                        disabled={loading}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {customers.map((customer) => {
+                const pointsStatus = getPointsStatus(customer.loyalty_points);
+                return (
+                  <tr key={customer.customer_id}>
+                    <td>{customer.customer_id}</td>
+                    <td>
+                      <div className="customer-name">{customer.name}</div>
+                    </td>
+                    <td>{customer.phone || '-'}</td>
+                    <td>{customer.email || '-'}</td>
+                    <td>
+                      <div className="stock-info">
+                        <span className="loyalty-points">{customer.loyalty_points} điểm</span>
+                        <span className={`points-badge ${pointsStatus.class}`}>
+                          {pointsStatus.text}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="customer-contact">
+                        {customer.address || '-'}
+                      </div>
+                    </td>
+                    <td>{formatDate(customer.created_at)}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="btn-info"
+                          onClick={() => onViewDetails(customer)}
+                          title="Xem chi tiết"
+                          disabled={loading}
+                        >
+                          👁️
+                        </button>
+                        <button
+                          className="btn-warning"
+                          onClick={() => onEdit(customer)}
+                          title="Sửa"
+                          disabled={loading}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          className="btn-danger"
+                          onClick={() => onDelete(customer)}
+                          title="Xóa"
+                          disabled={loading}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -348,7 +370,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
     phone: '',
     email: '',
     address: '',
-    loyalty_points: 0,
+    loyalty_points: 0
   });
 
   const [errors, setErrors] = useState<Partial<CustomerFormData>>({});
@@ -360,7 +382,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
         phone: customer.phone || '',
         email: customer.email || '',
         address: customer.address || '',
-        loyalty_points: customer.loyalty_points,
+        loyalty_points: customer.loyalty_points
       });
     }
   }, [customer]);
@@ -374,10 +396,6 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
 
     if (formData.email && !isValidEmail(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
-    }
-
-    if (formData.phone && formData.phone.length > 20) {
-      newErrors.phone = 'Số điện thoại không được vượt quá 20 ký tự';
     }
 
     setErrors(newErrors);
@@ -408,7 +426,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'loyalty_points' ? parseInt(value) || 0 : value,
+      [name]: name === 'loyalty_points' ? (value === '' ? 0 : Number(value)) : value
     }));
   };
 
@@ -421,51 +439,50 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
       </div>
       <div className="customer-card-body">
         <form onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="name" className="form-label">
-                Tên khách hàng <span className="required">*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-input ${errors.name ? 'error' : ''}`}
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-              {errors.name && <div className="error-message">{errors.name}</div>}
-            </div>
+          <div className="form-group">
+            <label htmlFor="name" className="form-label">
+              Tên khách hàng <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              className={`form-input ${errors.name ? 'error' : ''}`}
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              disabled={loading}
+            />
+            {errors.name && <div className="error-message">{errors.name}</div>}
+          </div>
 
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="phone" className="form-label">Số điện thoại</label>
               <input
                 type="tel"
-                className={`form-input ${errors.phone ? 'error' : ''}`}
+                className="form-input"
                 id="phone"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={loading}
               />
-              {errors.phone && <div className="error-message">{errors.phone}</div>}
             </div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">Email</label>
-            <input
-              type="email"
-              className={`form-input ${errors.email ? 'error' : ''}`}
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={loading}
-            />
-            {errors.email && <div className="error-message">{errors.email}</div>}
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">Email</label>
+              <input
+                type="email"
+                className={`form-input ${errors.email ? 'error' : ''}`}
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+              />
+              {errors.email && <div className="error-message">{errors.email}</div>}
+            </div>
           </div>
 
           <div className="form-group">
@@ -481,21 +498,19 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
             />
           </div>
 
-          {customer && (
-            <div className="form-group">
-              <label htmlFor="loyalty_points" className="form-label">Điểm tích lũy</label>
-              <input
-                type="number"
-                className="form-input"
-                id="loyalty_points"
-                name="loyalty_points"
-                min="0"
-                value={formData.loyalty_points}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
-          )}
+          <div className="form-group">
+            <label htmlFor="loyalty_points" className="form-label">Điểm tích lũy</label>
+            <input
+              type="number"
+              className="form-input"
+              id="loyalty_points"
+              name="loyalty_points"
+              min="0"
+              value={formData.loyalty_points}
+              onChange={handleChange}
+              disabled={loading}
+            />
+          </div>
 
           <div className="form-actions">
             <button
@@ -555,6 +570,14 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
     }
   };
 
+  const getPointsStatus = (points: number) => {
+    if (points >= 1000) return { text: 'VIP', class: 'high' };
+    if (points >= 500) return { text: 'Thường xuyên', class: 'medium' };
+    return { text: 'Mới', class: 'low' };
+  };
+
+  const pointsStatus = getPointsStatus(customer.loyalty_points);
+
   return (
     <div className="customer-card">
       <div className="customer-card-header">
@@ -575,7 +598,7 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
         </div>
 
         <div className="detail-row">
-          <div className="detail-label">Tên:</div>
+          <div className="detail-label">Tên khách hàng:</div>
           <div className="detail-value">{customer.name}</div>
         </div>
 
@@ -597,9 +620,28 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
         <div className="detail-row">
           <div className="detail-label">Điểm tích lũy:</div>
           <div className="detail-value">
-            <span className="loyalty-badge large">{customer.loyalty_points}</span>
+            <div className="stock-info">
+              <span className="loyalty-points">{customer.loyalty_points} điểm</span>
+              <span className={`points-badge ${pointsStatus.class}`}>
+                {pointsStatus.text}
+              </span>
+            </div>
           </div>
         </div>
+
+        {customer.total_orders !== undefined && (
+          <div className="detail-row">
+            <div className="detail-label">Tổng số đơn hàng:</div>
+            <div className="detail-value">{customer.total_orders}</div>
+          </div>
+        )}
+
+        {customer.last_purchase_date && (
+          <div className="detail-row">
+            <div className="detail-label">Mua hàng cuối:</div>
+            <div className="detail-value">{formatDate(customer.last_purchase_date)}</div>
+          </div>
+        )}
 
         <div className="detail-row">
           <div className="detail-label">Ngày tạo:</div>
@@ -778,6 +820,12 @@ const CustomerManagement: React.FC = () => {
     setError('');
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setPagination(prev => ({ ...prev, page: 1 }));
+    loadCustomers();
+  };
+
   return (
     <div className="customer-management">
       <div className="customer-header">
@@ -822,38 +870,35 @@ const CustomerManagement: React.FC = () => {
         </div>
       )}
 
-      <div className="search-section">
+      <div className="filters-section">
         <form onSubmit={handleSearch}>
-          <div className="search-group">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Tìm kiếm theo tên, số điện thoại, email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              disabled={loading}
-            />
-            <button 
-              className="search-btn" 
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? <div className="spinner-small"></div> : '🔍'}
-            </button>
-            {searchTerm && (
-              <button
-                className="clear-btn"
-                type="button"
-                onClick={() => {
-                  setSearchTerm('');
-                  setPagination(prev => ({ ...prev, page: 1 }));
-                  loadCustomers();
-                }}
+          <div className="filters-row">
+            <div className="search-group">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Tìm kiếm theo tên, số điện thoại, email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                disabled={loading}
+              />
+              <button 
+                className="search-btn" 
+                type="submit"
                 disabled={loading}
               >
-                ✕
+                {loading ? <div className="spinner-small"></div> : '🔍'}
               </button>
-            )}
+            </div>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={clearFilters}
+              disabled={loading}
+            >
+              Xóa bộ lọc
+            </button>
           </div>
         </form>
       </div>
