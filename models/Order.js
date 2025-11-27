@@ -10,7 +10,7 @@ class Order {
 
           let query = `
               SELECT
-                  order_id, customer_id, subtotal, discount, tax, final_amount,
+                  order_id, customer_id, final_amount,
                   payment_status, order_status, created_at, note
               FROM orders
               WHERE 1=1
@@ -143,16 +143,16 @@ class Order {
       await connection.beginTransaction();
 
       const {
-        customer_id, created_by, subtotal, discount, tax, final_amount,
+        customer_id, created_by, final_amount,
         payment_status = 'pending', order_status = 'draft', note
       } = orderData;
 
       // Tạo đơn hàng
       const [orderResult] = await connection.execute(
         `INSERT INTO orders 
-         (customer_id, created_by, subtotal, discount, tax, final_amount, payment_status, order_status, note) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [customer_id, created_by, subtotal, discount, tax, final_amount, payment_status, order_status, note]
+         (customer_id, created_by, final_amount, payment_status, order_status, note) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [customer_id, created_by, final_amount, payment_status, order_status, note]
       );
 
       const orderId = orderResult.insertId;

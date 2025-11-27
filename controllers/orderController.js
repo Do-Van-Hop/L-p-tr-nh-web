@@ -67,7 +67,7 @@ const orderController = {
     // Tạo đơn hàng mới
     createOrder: async (req, res) => {
       try {
-        const { customer_id, items, discount = 0, tax = 0, note } = req.body;
+        const { customer_id, items, note } = req.body;
         const created_by = req.user.user_id;
 
         // Điều kiện
@@ -79,7 +79,7 @@ const orderController = {
         }
 
       // Kiểm tra tồn kho và tính toán
-      let subtotal = 0;
+      let final_amount = 0;
       const orderItems = [];
 
       for (const item of items) {
@@ -110,7 +110,7 @@ const orderController = {
 
         const unit_price = product.price;
         const total_price = unit_price * quantity;
-        subtotal += total_price;
+        final_amount += total_price;
 
         orderItems.push({
           product_id,
@@ -121,14 +121,10 @@ const orderController = {
         });
       }
 
-      const final_amount = subtotal - discount + tax;
 
       const orderData = {
         customer_id: customer_id || null,
         created_by,
-        subtotal,
-        discount,
-        tax,
         final_amount,
         note
       };
@@ -140,9 +136,6 @@ const orderController = {
         message: 'Tạo đơn hàng thành công',
         data: { 
           order_id: orderId,
-          subtotal,
-          discount,
-          tax,
           final_amount
         }
       });
