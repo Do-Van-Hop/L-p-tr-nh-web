@@ -64,19 +64,19 @@ const orderController = {
     }
   },
 
-  // Tạo đơn hàng mới
-  createOrder: async (req, res) => {
-    try {
-      const { customer_id, items, discount = 0, tax = 0, note } = req.body;
-      const created_by = req.user.user_id;
+    // Tạo đơn hàng mới
+    createOrder: async (req, res) => {
+      try {
+        const { customer_id, items, discount = 0, tax = 0, note } = req.body;
+        const created_by = req.user.user_id;
 
-      // Điều kiện
-      if (!items || !Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Danh sách sản phẩm là bắt buộc'
-        });
-      }
+        // Điều kiện
+        if (!items || !Array.isArray(items) || items.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Danh sách sản phẩm là bắt buộc'
+          });
+        }
 
       // Kiểm tra tồn kho và tính toán
       let subtotal = 0;
@@ -114,6 +114,7 @@ const orderController = {
 
         orderItems.push({
           product_id,
+          name: product.name,
           quantity,
           unit_price,
           total_price

@@ -159,13 +159,13 @@ class Order {
 
       // Thêm các items vào đơn hàng
       for (const item of items) {
-        const { product_id, quantity, unit_price, total_price } = item;
+        const { product_id,name,  quantity, unit_price, total_price } = item;
         
         await connection.execute(
           `INSERT INTO order_items 
-           (order_id, product_id, quantity, unit_price, total_price) 
-           VALUES (?, ?, ?, ?, ?)`,
-          [orderId, product_id, quantity, unit_price, total_price]
+           (order_id, product_id,name,  quantity, unit_price, total_price) 
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [orderId, product_id,name, quantity, unit_price, total_price]
         );
 
         // Cập nhật tồn kho
