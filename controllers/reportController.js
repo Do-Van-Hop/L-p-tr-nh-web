@@ -5,49 +5,50 @@ const reportController = {
   getSalesReport: async (req, res) => {
     try {
       const { period = 'daily', date_from, date_to } = req.query;
-      let dateFormat, groupBy;
+      let dateFormat;
+      
       switch (period) {
         case 'daily':
           dateFormat = '%Y-%m-%d';
-          groupBy = 'DATE(created_at)';
           break;
         case 'weekly':
           dateFormat = '%Y-%u';
-          groupBy = 'YEARWEEK(created_at)';
           break;
         case 'monthly':
           dateFormat = '%Y-%m';
-          groupBy = 'YEAR(created_at), MONTH(created_at)';
           break;
         default:
           dateFormat = '%Y-%m-%d';
-          groupBy = 'DATE(created_at)';
       }
 
-      let query = `
+      let whereClause = "WHERE order_status != 'cancelled'";
+      const params = [];
+
+      if (date_from) {
+        whereClause += ' AND DATE(created_at) >= ?';
+        params.push(date_from);
+      }
+
+      if (date_to) {
+        whereClause += ' AND DATE(created_at) <= ?';
+        params.push(date_to);
+      }
+
+      // FIX: Dùng string literal và GROUP BY alias
+      const query = `
         SELECT
-          DATE_FORMAT(created_at, ?) as period,
+          DATE_FORMAT(created_at, '${dateFormat}') as period,
           COUNT(*) as total_orders,
           SUM(final_amount) as total_revenue,
           AVG(final_amount) as avg_order_value,
           COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) as paid_orders,
           COUNT(CASE WHEN order_status = 'completed' THEN 1 END) as completed_orders
         FROM orders
-        WHERE order_status != 'cancelled'
+        ${whereClause}
+        GROUP BY period
+        ORDER BY period DESC 
+        LIMIT 30
       `;
-      const params = [dateFormat];
-
-      if (date_from) {
-        query += ' AND DATE(created_at) >= ?';
-        params.push(date_from);
-      }
-
-      if (date_to) {
-        query += ' AND DATE(created_at) <= ?';
-        params.push(date_to);
-      }
-
-      query += ` GROUP BY ${groupBy} ORDER BY period DESC LIMIT 30`;
 
       const [rows] = await pool.execute(query, params);
 

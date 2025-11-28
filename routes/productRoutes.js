@@ -13,8 +13,8 @@ router.get('/search', productController.searchProducts);
 router.get('/low-stock', productController.getLowStockProducts);
 router.get('/:id', productController.getProductById);
 
-router.post('/', roleMiddleware(['manager']), validateProductCreate, productController.createProduct);
-router.put('/:id', roleMiddleware(['manager']), validateProductUpdate, productController.updateProduct);
-router.delete('/:id', roleMiddleware(['manager']), productController.deleteProduct);
+router.post('/', validateProductCreate, productController.createProduct);
+router.put('/:id', validateProductUpdate, productController.updateProduct);
+router.delete('/:id', productController.deleteProduct);
 
 module.exports = router;

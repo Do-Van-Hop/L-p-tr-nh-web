@@ -14,9 +14,9 @@ router.get('/:id', customerController.getCustomerById);
 router.get('/:id/purchase-history', customerController.getPurchaseHistory);
 router.get('/:id/purchase-stats', customerController.getPurchaseStats);
 
-router.post('/', roleMiddleware(['manager']), validateCustomerCreate, customerController.createCustomer);
-router.put('/:id', roleMiddleware(['manager']), validateCustomerUpdate, customerController.updateCustomer);
-router.delete('/:id', roleMiddleware(['manager']), customerController.deleteCustomer);
+router.post('/', validateCustomerCreate, customerController.createCustomer);
+router.put('/:id', validateCustomerUpdate, customerController.updateCustomer);
+router.delete('/:id',  customerController.deleteCustomer);
 
 router.patch('/:id/loyalty-points', customerController.updateLoyaltyPoints);
 

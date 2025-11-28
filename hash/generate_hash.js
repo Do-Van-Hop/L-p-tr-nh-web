@@ -1,9 +1,28 @@
 // generate-hash.js
 const bcrypt = require('bcrypt');
+const readline = require('readline');
 
-bcrypt.hash('Admin@123', 12).then(hash => {
-  console.log('Copy hash này:');
-  console.log(hash);
-  console.log('\nSQL query:');
-  console.log(`UPDATE users SET password_hash = '${hash}' WHERE username = 'manager';`);
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
 });
+
+rl.question('Nhập username: ', (username) => {
+  rl.question('Nhập password: ', async (password) => {
+    try {
+      const hash = await bcrypt.hash(password, 12);
+      
+      console.log('\n✅ Kết quả:');
+      console.log('Username:', username);
+      console.log('Password:', password);
+      console.log('Hash:', hash);
+      console.log('\n📋 SQL query:');
+      console.log(`UPDATE users SET password_hash = '${hash}' WHERE username = '${username}';`);
+      
+    } catch (error) {
+      console.error('❌ Lỗi:', error);
+    } finally {
+      rl.close();
+    }
+  });
+  });
