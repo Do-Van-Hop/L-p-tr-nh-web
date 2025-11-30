@@ -1,0 +1,428 @@
+/* OrderManagement.css - Updated */
+.order-management {
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.order-header h1 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Cards */
+.order-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e1e5e9;
+}
+
+.order-card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e1e5e9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-card-title {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.order-card-body {
+  padding: 30px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 45px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1a252f;
+  transform: translateY(-1px);
+}
+
+/* Table */
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  padding: 20px;
+}
+
+.order-table th {
+  background: #f8f9fa;
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e1e5e9;
+  font-size: 14px;
+}
+
+.order-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 14px;
+}
+
+.order-table tr:hover {
+  background: #f8f9fa;
+}
+
+/* Status badges */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+  display: inline-block;
+}
+
+.status-badge.draft {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.status-badge.confirmed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-badge.completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.payment-status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.payment-status-badge.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.payment-status-badge.paid {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* Order items table */
+.order-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.order-items-table th {
+  background: #e9ecef;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  font-size: 13px;
+}
+
+.order-items-table td {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 13px;
+}
+
+.order-items-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Layout */
+.order-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  align-items: start;
+}
+
+.full-content {
+  grid-column: 1 / -1;
+}
+
+.main-content {
+  grid-column: 1;
+}
+
+.sidebar-content {
+  grid-column: 2;
+  position: sticky;
+  top: 20px;
+}
+
+
+
+/* --- Modal Styles --- */
+
+/* Lớp phủ toàn màn hình */
+/* order.css */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  overflow-y: auto; /* cho phép scroll nếu modal quá cao */
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px; /* tùy chỉnh chiều rộng */
+  max-height: 90vh;  /* giới hạn chiều cao tối đa */
+  overflow-y: auto;  /* bật thanh cuộn dọc */
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+
+.modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.form-group{
+  margin: 10px;
+  display: flex;
+  gap: 15px;
+}
+
+/* OrderForm.css */
+form.order-form {
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  box-sizing: border-box;
+  height: 80vh; /* Chiều cao tối đa để scroll */
+  overflow-y: auto; /* Scroll khi nội dung quá dài */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-item-row select {
+  flex: 2;
+}
+
+.order-item-row input[type="number"] {
+  width: 60px;
+}
+
+.order-item-row span {
+  flex: 1;
+  text-align: right;
+  font-weight: bold;
+}
+
+.order-item-row button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+button {
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button[type="submit"] {
+  background-color: #007bff;
+  color: #fff;
+}
+
+button[type="button"] {
+  background-color: #1f8ae8;
+  color: #fff;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  flex-shrink: 0; /* Giữ phần button luôn hiển thị */
+}
+
+/* Scrollable sản phẩm */
+.order-items-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+  border: 1px solid #eee;
+  border-radius: 5px;
+}
+/* OrderForm.css */
+
+.order-form-wrapper {
+  height: 90vh;           /* Chiều cao toàn màn hình */
+  overflow-y: auto;       /* Luôn tạo thanh cuộn khi dài */
+  padding: 20px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.order-form-wrapper * {
+  box-sizing: border-box; /* tránh tràn layout */
+}
+
+.order-items-header{
+  display: flex;
+  gap: 20px;
+}
+.price{
+  padding: 10px;
+}
+
+.order-item-row select, input{
+ padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.detail-row-items{
+  display: flex;
+  flex-direction:column ;
+}
+
+.order-detail-items-table{
+  width: 100%;
+  border-collapse: collapse;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.order-detail-items-table th {
+  background: #f8f9fa;
+  padding: 16px 12px;
+  text-align: center;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e1e5e9;
+  font-size: 14px;
+}
+
+.order-detail-items-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 14px;
+}

@@ -1,0 +1,73 @@
+
+body {
+    background-color: #5572d31f!important; 
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin: 0; 
+}
+
+/* Định kiểu cho input và button */
+input[type="text"], 
+input[type="password"],
+input:not([type]) { 
+    width: 100%;
+    padding: 12px;
+    border: none; 
+    border-radius: 8px;
+    background-color: #f0f0f0 !important; 
+    margin-bottom: 20px;
+    box-sizing: border-box; 
+    outline: none;
+    font-size: 16px;
+}
+
+/* Định kiểu cho nút Đăng nhập */
+.login-button {
+    width: 100%;
+    padding: 12px;
+    background-color: rgb(36, 40, 67)!important;
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+.login-button:hover {
+    background-color: #15182bbe !important;
+}
+
+
+
+/* Định kiểu cho tiêu đề và logo */
+.header-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo-container {
+    margin: 0 auto;
+    width: 64px;
+    height: 64px;
+    background-color: #574edc;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.card-container{
+    border: 5px solid #b7b8bc58 ;
+    border-radius: 20px;
+    padding: 50px;
+    background-color: #fcfbfb;
+    width: 450px;
+    height: auto;
+    margin: 100px;
+}

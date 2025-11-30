@@ -1,0 +1,525 @@
+/* Search.css */
+.search-page {
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.search-header {
+  margin-bottom: 24px;
+}
+
+.search-header h1 {
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.search-subtitle {
+  color: #6c757d;
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Cards */
+.search-card,
+.results-card,
+.initial-card {
+  background: white;
+  border-radius: 12px;
+
+  margin-bottom: 20px;
+  border: 1px solid #e1e5e9;
+}
+
+.search-card {
+  padding: 24px;
+}
+
+.results-card {
+  overflow: hidden;
+}
+
+.initial-card {
+  padding: 40px;
+  text-align: center;
+}
+
+/* Search Form */
+.search-form {
+  max-width: 600px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+/* Search Type Tabs */
+.search-type-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  border: 2px solid #e1e5e9;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: #6c757d;
+}
+
+.tab-button:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.tab-button.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+/* Search Input */
+.search-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.search-submit-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.search-submit-btn:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.search-submit-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Results Section */
+.results-section {
+  margin-top: 24px;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e1e5e9;
+  background: #f8f9fa;
+}
+
+.results-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.results-count {
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Tables */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.results-table th {
+  background: #f8f9fa;
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e1e5e9;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.results-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.results-table tr:hover {
+  background: #f8f9fa;
+}
+
+.results-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Product specific styles */
+.product-sku {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #495057;
+}
+
+.product-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.product-price {
+  font-weight: 600;
+  color: #e67e22;
+  white-space: nowrap;
+}
+
+.product-stock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-quantity {
+  font-weight: 600;
+  color: #495057;
+}
+
+.stock-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stock-badge.in-stock {
+  background: #d4edda;
+  color: #155724;
+}
+
+.stock-badge.low-stock {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.stock-badge.out-of-stock {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Order specific styles */
+.order-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #007bff;
+}
+
+.customer-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.order-amount {
+  font-weight: 600;
+  color: #28a745;
+  white-space: nowrap;
+}
+
+.order-date {
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.active,
+.status-badge.completed,
+.status-badge.paid {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.confirmed {
+  background: #cce7ff;
+  color: #004085;
+}
+
+.status-badge.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.inactive,
+.status-badge.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-badge.default {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+/* Loading and Empty States */
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.empty-text {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.empty-hint {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 0;
+}
+
+/* Initial State */
+.initial-state {
+  margin-top: 40px;
+}
+
+.initial-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.initial-card h3 {
+  color: #2c3e50;
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+
+.initial-card p {
+  color: #6c757d;
+  margin-bottom: 24px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.search-tips {
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.search-tips h4 {
+  color: #2c3e50;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.search-tips ul {
+  color: #6c757d;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.search-tips li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+/* Search.css - UPDATED */
+/* ... (giữ nguyên các styles cũ) ... */
+
+/* Search Error */
+.search-error {
+  color: #dc3545;
+  font-size: 14px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+/* Clear Search Button */
+.clear-search-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.clear-search-btn:hover:not(:disabled) {
+  background: #545b62;
+}
+
+.clear-search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error Alert */
+.error-alert {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.alert-icon {
+  font-size: 16px;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  color: #721c24;
+}
+
+.alert-close:hover {
+  opacity: 1;
+}
+
+/* Small Spinner */
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* Search Input Group - Updated for 3 buttons */
+.search-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+/* Debug Info */
+.debug-info {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 16px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Status badge additions */
+.status-badge.draft {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
