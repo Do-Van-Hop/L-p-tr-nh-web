@@ -9,19 +9,32 @@ class Order {
           const offset = (pageNum - 1) * limitNum;
 
           let query = `
-              SELECT
-                  order_id, customer_id, final_amount,
-                  payment_status, order_status, created_at, note
-              FROM orders
+              SELECT 
+                  o.order_id, 
+                  o.customer_id, 
+                  o.final_amount,
+                  o.payment_status, 
+                  o.order_status, 
+                  o.created_at, 
+                  o.note,
+                  o.created_by,
+                  c.name as customer_name,
+                  c.phone as customer_phone,
+                  c.email as customer_email,
+                  u.username as created_by_username,
+                  u.full_name as created_by_name
+              FROM orders o
+              LEFT JOIN customers c ON o.customer_id = c.customer_id
+              LEFT JOIN users u ON o.created_by = u.user_id
               WHERE 1=1
           `;
 
           const params = [];
 
           if (search && search.trim() !== '') {
-              query += ' AND (order_id = ? OR note LIKE ?)';
+              query += ' AND (o.order_id = ? OR o.note LIKE ? OR c.name LIKE ? OR c.phone LIKE ?)';
               const searchId = parseInt(search) || 0;
-              params.push(searchId, `%${search}%`);
+              params.push(searchId, `%${search}%`, `%${search}%`, `%${search}%`);
           }
 
           if (status) {
@@ -44,7 +57,7 @@ class Order {
               params.push(date_to);
           }
 
-          query += ` ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+          query += ` ORDER BY o.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
 
           console.log('🔍 Order Query:', query);
           console.log('📊 Order Params:', params);
@@ -52,7 +65,12 @@ class Order {
           const [rows] = await pool.execute(query, params);
 
           // Count query
-          let countQuery = 'SELECT COUNT(*) as total FROM orders WHERE 1=1';
+          let countQuery = `
+              SELECT COUNT(*) as total
+              FROM orders o
+              LEFT JOIN customers c ON o.customer_id = c.customer_id
+              WHERE 1=1
+          `;
           const countParams = [];
 
           if (search && search.trim() !== '') {
@@ -85,32 +103,37 @@ class Order {
           const total = countRows[0].total;
 
           return {
-              orders: rows,
-              pagination: {
-                  page: pageNum,
-                  limit: limitNum,
-                  total,
-                  totalPages: Math.ceil(total / limitNum)
-              }
-          };
-      } catch (error) {
-          console.error('ORDER FINDALL ERROR:', error.message);
-          throw error;
-      }
+            orders: rows,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total: countRows[0].total,
+                totalPages: Math.ceil(countRows[0].total / limitNum)
+            }
+        };
+    } catch (error) {
+        console.error('ORDER FINDALL ERROR:', error.message);
+        throw error;
+    }
   }
   // Lấy đơn hàng bằng ID
   static async findById(orderId) {
     try {
-      const [rows] = await pool.execute(
-        `SELECT orders.*, customers.name as customer_name, customers.phone as customer_phone, 
-                customers.email as customer_email, customers.address as customer_address,
-                users.username as created_by_name
-         FROM orders 
-         LEFT JOIN customers ON orders.customer_id = customers.customer_id
-         LEFT JOIN users ON orders.created_by = users.user_id
-         WHERE orders.order_id = ?`,
-        [orderId]
-      );
+        const [rows] = await pool.execute(
+            `SELECT 
+                o.*,
+                c.name as customer_name,
+                c.phone as customer_phone,
+                c.email as customer_email,
+                c.address as customer_address,
+                u.username as created_by_username,
+                u.full_name as created_by_name
+            FROM orders o
+            LEFT JOIN customers c ON o.customer_id = c.customer_id
+            LEFT JOIN users u ON o.created_by = u.user_id
+            WHERE o.order_id = ?`,
+            [orderId]
+        );
       return rows[0];
     } catch (error) {
       console.error('Order findById error:', error.message);
@@ -121,17 +144,21 @@ class Order {
   // Lấy chi tiết đơn hàng
   static async getOrderItems(orderId) {
     try {
-      const [rows] = await pool.execute(
-        `SELECT order_items.*, products.name as product_name, products.sku as product_sku
-         FROM order_items 
-         JOIN products ON order_items.product_id = products.product_id
-         WHERE order_items.order_id = ?`,
-        [orderId]
-      );
-      return rows;
+        const [rows] = await pool.execute(
+            `SELECT 
+                oi.*, 
+                p.name as product_name, 
+                p.sku as product_sku,
+                p.price as current_price  // ✅ Thêm giá hiện tại để so sánh
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.product_id
+            WHERE oi.order_id = ?`,
+            [orderId]
+        );
+        return rows;
     } catch (error) {
-      console.error('Order getOrderItems error:', error.message);
-      return [];
+        console.error('Order getOrderItems error:', error.message);
+        return [];
     }
   }
 

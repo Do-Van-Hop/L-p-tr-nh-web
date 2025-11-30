@@ -1,50 +1,82 @@
 const validateUserCreate = (req, res, next) => {
-  const { username, password, role } = req.body;
+    const { username, password, role } = req.body;
 
-  if (!username || username.length < 3) {
-    return res.status(400).json({
-      success: false,
-      message: 'Username phải có ít nhất 3 ký tự'
-    });
-  }
+    if (!username || username.length < 3) {
+        return res.status(400).json({
+            success: false,
+            message: 'Username phải có ít nhất 3 ký tự'
+        });
+    }
 
-  if (!password || password.length < 6) {
-    return res.status(400).json({
-      success: false,
-      message: 'Password phải có ít nhất 6 ký tự'
-    });
-  }
+    if (!password || password.length < 6) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password phải có ít nhất 6 ký tự'
+        });
+    }
 
-  if (role && !['manager', 'staff'].includes(role)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Role phải là manager hoặc staff'
-    });
-  }
+    if (role && !['manager', 'staff'].includes(role)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Role phải là manager hoặc staff'
+        });
+    }
 
-  next();
+    next();
 };
 
 const validateUserUpdate = (req, res, next) => {
-  const { role, username } = req.body;
+    const { role, username } = req.body;
 
-  if (role && !['manager', 'staff'].includes(role)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Role phải là manager hoặc staff'
-    });
-  }
+    if (role && !['manager', 'staff'].includes(role)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Role phải là manager hoặc staff'
+        });
+    }
 
-  if (username && username.length < 3) {
-    return res.status(400).json({
-      success: false,
-      message: 'Username phải có ít nhất 3 ký tự'
-    });
-  }
+    if (username && username.length < 3) {
+        return res.status(400).json({
+            success: false,
+            message: 'Username phải có ít nhất 3 ký tự'
+        });
+    }
 
-  next();
+    next();
 };
 
+const validateProfileUpdate = (req, res, next) => {
+    const { full_name, email, phone } = req.body;
+
+    if (full_name && full_name.trim().length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Họ tên không được để trống'
+        });
+    }
+
+    if (email && !isValidEmail(email)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Email không hợp lệ'
+        });
+    }
+
+    if (phone && phone.length > 20) {
+        return res.status(400).json({
+            success: false,
+            message: 'Số điện thoại không được vượt quá 20 ký tự'
+        });
+    }
+
+    next();
+};
+
+// Helper function to validate email
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
 const validateProductCreate = (req, res, next) => {
   const { name, category_id, supplier_id, price } = req.body;
 
@@ -297,12 +329,6 @@ const validateCustomerUpdate = (req, res, next) => {
 
   next();
 };
-
-// Helper function to validate email
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
 
 module.exports = {
   validateUserCreate,

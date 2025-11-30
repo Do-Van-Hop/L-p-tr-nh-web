@@ -3,12 +3,12 @@ const { pool } = require('../config/database');
 class Product {
   // Lấy tất cả sản phẩm
   static async findAll({ page = 1, limit = 10, search = '', category_id, status }) {
-      try {
-          const pageNum = parseInt(page) || 1;
-          const limitNum = parseInt(limit) || 10;
-          const offset = (pageNum - 1) * limitNum;
+    try {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 10;
+      const offset = (pageNum - 1) * limitNum;
 
-          let query = `
+      let query = `
               SELECT
                   p.product_id, p.name, p.sku, p.description, p.price, p.cost_price,
                   p.stock_quantity, p.min_stock, p.max_stock, p.status, p.created_at,
@@ -19,34 +19,34 @@ class Product {
               WHERE p.status != 'deleted'
           `;
 
-          const params = [];
+      const params = [];
 
-          if (search && search.trim() !== '') {
-              query += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
-              params.push(`%${search}%`, `%${search}%`);
-          }
+      if (search && search.trim() !== '') {
+        query += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`);
+      }
 
-          if (category_id && !isNaN(category_id)) {
-              query += ' AND p.category_id = ?';
-              params.push(parseInt(category_id));
-          }
+      if (category_id && !isNaN(category_id)) {
+        query += ' AND p.category_id = ?';
+        params.push(parseInt(category_id));
+      }
 
-          if (status) {
-              query += ' AND p.status = ?';
-              params.push(status);
-          }
+      if (status) {
+        query += ' AND p.status = ?';
+        params.push(status);
+      }
 
-          query += ' ORDER BY p.created_at DESC';
+      query += ' ORDER BY p.created_at DESC';
 
-          query += ` LIMIT ${limitNum} OFFSET ${offset}`;
+      query += ` LIMIT ${limitNum} OFFSET ${offset}`;
 
-          console.log('🔍 Final Query:', query);
-          console.log('📊 Parameters:', params);
+      console.log('🔍 Final Query:', query);
+      console.log('📊 Parameters:', params);
 
-          const [rows] = await pool.execute(query, params);
+      const [rows] = await pool.execute(query, params);
 
-          // Count
-          let countQuery = `
+      // Count
+      let countQuery = `
               SELECT COUNT(*) as total
               FROM products p
               LEFT JOIN categories c ON p.category_id = c.category_id
@@ -54,40 +54,40 @@ class Product {
               WHERE p.status != 'deleted'
           `;
 
-          const countParams = [];
+      const countParams = [];
 
-          if (search && search.trim() !== '') {
-              countQuery += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
-              countParams.push(`%${search}%`, `%${search}%`);
-          }
-
-          if (category_id && !isNaN(category_id)) {
-              countQuery += ' AND p.category_id = ?';
-              countParams.push(parseInt(category_id));
-          }
-
-          if (status) {
-              countQuery += ' AND p.status = ?';
-              countParams.push(status);
-          }
-
-          const [countRows] = await pool.execute(countQuery, countParams);
-          const total = countRows[0].total;
-
-          return {
-              products: rows,
-              pagination: {
-                  page: pageNum,
-                  limit: limitNum,
-                  total,
-                  totalPages: Math.ceil(total / limitNum)
-              }
-          };
-
-      } catch (error) {
-          console.error('PRODUCT FINDALL ERROR:', error.message);
-          throw error;
+      if (search && search.trim() !== '') {
+        countQuery += ' AND (p.name LIKE ? OR p.sku LIKE ?)';
+        countParams.push(`%${search}%`, `%${search}%`);
       }
+
+      if (category_id && !isNaN(category_id)) {
+        countQuery += ' AND p.category_id = ?';
+        countParams.push(parseInt(category_id));
+      }
+
+      if (status) {
+        countQuery += ' AND p.status = ?';
+        countParams.push(status);
+      }
+
+      const [countRows] = await pool.execute(countQuery, countParams);
+      const total = countRows[0].total;
+
+      return {
+        products: rows,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      };
+
+    } catch (error) {
+      console.error('PRODUCT FINDALL ERROR:', error.message);
+      throw error;
+    }
   }
   // Lấy sản phẩm bằng ID - ĐÃ SỬA
   static async findById(productId) {
@@ -133,7 +133,7 @@ class Product {
   static async update(productId, updateData) {
     try {
       const allowedFields = [
-        'name', 'sku', 'description', 'category_id', 'supplier_id', 'price', 
+        'name', 'sku', 'description', 'category_id', 'supplier_id', 'price',
         'cost_price', 'stock_quantity', 'min_stock', 'max_stock', 'status'
       ];
       const updateFields = [];
