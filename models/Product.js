@@ -182,13 +182,17 @@ class Product {
   // Tìm kiếm sản phẩm theo tên - ĐÃ SỬA
   static async search(query, limit = 10) {
     try {
-      const [rows] = await pool.execute(
-        `SELECT product_id, name, sku, price, stock_quantity 
-         FROM products 
-         WHERE (name LIKE ? OR sku LIKE ?) AND status = 'active'
-         LIMIT ?`,
-        [`%${query}%`, `%${query}%`, parseInt(limit)]
+      const limitNum = parseInt(limit) || 10;
+      
+      // Sử dụng query() thay vì execute()
+      const [rows] = await pool.query(
+        `SELECT product_id, name, sku, price, stock_quantity
+        FROM products
+        WHERE (name LIKE ? OR sku LIKE ?) AND status = 'active'
+        LIMIT ?`,
+        [`%${query}%`, `%${query}%`, limitNum]
       );
+      
       return rows;
     } catch (error) {
       console.error('Search products error:', error.message);

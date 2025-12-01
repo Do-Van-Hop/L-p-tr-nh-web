@@ -84,7 +84,7 @@ class Customer {
   // Tạo khách hàng mới
   static async create(customerData) {
     const {
-      name, phone, email, address, loyalty_points = 0
+      name, birth_year, phone, email, address, loyalty_points = 0
     } = customerData;
 
     try {
@@ -92,7 +92,7 @@ class Customer {
         `INSERT INTO customers 
          (name, birth_year, phone, email, address, loyalty_points) 
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [name, phone, email, address, loyalty_points]
+        [name, birth_year, phone, email, address, loyalty_points]
       );
 
       return result.insertId;
@@ -189,8 +189,6 @@ class Customer {
         o.order_id,
         o.customer_id,
         o.created_by,
-        o.subtotal,
-        o.tax,
         o.final_amount,
         o.payment_status,
         o.order_status,

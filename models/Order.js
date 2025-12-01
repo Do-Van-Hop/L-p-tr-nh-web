@@ -370,6 +370,46 @@ class Order {
       throw new Error(`Database error: ${error.message}`);
     }
   }
+  static async findByCustomer(customerId, { page = 1, limit = 10 } = {}) {
+    try {
+      // Convert các tham số thành số nguyên
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 10;
+      const offset = (pageNum - 1) * limitNum;
+      
+      // Sử dụng query() thay vì execute()
+      const [rows] = await pool.query(
+        `SELECT orders.*, users.username as created_by_name
+        FROM orders
+        LEFT JOIN users ON orders.created_by = users.user_id
+        WHERE orders.customer_id = ?
+        ORDER BY orders.created_at DESC
+        LIMIT ? OFFSET ?`,
+        [customerId, limitNum, offset]
+      );
+
+      // Đếm tổng số bản ghi
+      const [countRows] = await pool.execute(
+        'SELECT COUNT(*) as total FROM orders WHERE customer_id = ?',
+        [customerId]
+      );
+
+      const total = countRows[0].total;
+
+      return {
+        orders: rows,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      };
+    } catch (error) {
+      console.error('Order findByCustomer error:', error.message);
+      throw new Error(`Database error: ${error.message}`);
+    }
+  }
 }
 
 module.exports = Order;

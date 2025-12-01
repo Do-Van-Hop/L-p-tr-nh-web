@@ -54,60 +54,61 @@ const customerController = {
 
   // Tạo khách hàng mới
   createCustomer: async (req, res) => {
-    try {
-      const { name, birth_year,  phone, email, address, loyalty_points } = req.body;
+      try {
+          const { name, birth_year, phone, email, address, loyalty_points } = req.body;
 
-      // Validate required fields
-      if (!name) {
-        return res.status(400).json({
-          success: false,
-          message: 'Tên khách hàng là bắt buộc'
-        });
-      }
-
-      // Validate birth_year nếu có
-      if (birth_year) {
-          const currentYear = new Date().getFullYear();
-          if (birth_year < 1900 || birth_year > currentYear) {
+          // Validate required fields
+          if (!name) {
               return res.status(400).json({
                   success: false,
-                  message: 'Năm sinh không hợp lệ'
+                  message: 'Tên khách hàng là bắt buộc'
               });
           }
-      }
 
-      if (phone) {
-        const existingCustomer = await Customer.findByPhone(phone);
-        if (existingCustomer) {
-          return res.status(400).json({
-            success: false,
-            message: 'Số điện thoại đã tồn tại'
+          // Validate birth_year nếu có
+          if (birth_year) {
+              const currentYear = new Date().getFullYear();
+              if (birth_year < 1900 || birth_year > currentYear) {
+                  return res.status(400).json({
+                      success: false,
+                      message: 'Năm sinh không hợp lệ'
+                  });
+              }
+          }
+
+          if (phone) {
+              const existingCustomer = await Customer.findByPhone(phone);
+              if (existingCustomer) {
+                  return res.status(400).json({
+                      success: false,
+                      message: 'Số điện thoại đã tồn tại'
+                  });
+              }
+          }
+
+          // THÊM birth_year VÀO ĐÂY
+          const customerId = await Customer.create({
+              name,
+              birth_year,  // THÊM DÒNG NÀY
+              phone,
+              email,
+              address,
+              loyalty_points
           });
-        }
+
+          res.status(201).json({
+              success: true,
+              message: 'Tạo khách hàng thành công',
+              data: { customer_id: customerId }
+          });
+      } catch (error) {
+          console.error('Create customer error:', error);
+          res.status(500).json({
+              success: false,
+              message: 'Lỗi server khi tạo khách hàng'
+          });
       }
-
-      const customerId = await Customer.create({
-        name,
-        phone,
-        email,
-        address,
-        loyalty_points
-      });
-
-      res.status(201).json({
-        success: true,
-        message: 'Tạo khách hàng thành công',
-        data: { customer_id: customerId }
-      });
-    } catch (error) {
-      console.error('Create customer error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Lỗi server khi tạo khách hàng'
-      });
-    }
   },
-
   // Cập nhật khách hàng
   updateCustomer: async (req, res) => {
     try {

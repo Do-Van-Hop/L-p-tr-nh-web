@@ -65,6 +65,30 @@ const orderController = {
     }
   },
 
+  getOrdersByCustomer: async (req, res) => {
+    try {
+      const { customerId } = req.params;
+      const { page, limit } = req.query;
+      
+      // GỌI PHƯƠNG THỨC TỪ MODEL Order
+      const result = await Order.findByCustomer(customerId, {
+        page: page || 1,
+        limit: limit || 10
+      });
+      
+      res.json({
+        success: true,
+        data: result.orders,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      console.error('Get orders by customer error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi server khi lấy đơn hàng theo khách hàng'
+      });
+    }
+  },
     // Tạo đơn hàng mới
   createOrder: async (req, res) => {
       const connection = await pool.getConnection();
@@ -296,31 +320,6 @@ const orderController = {
       res.status(500).json({
         success: false,
         message: 'Lỗi server khi hủy đơn hàng'
-      });
-    }
-  },
-
-  // Lấy đơn hàng theo khách hàng
-  getOrdersByCustomer: async (req, res) => {
-    try {
-      const { customerId } = req.params;
-      const { page, limit } = req.query;
-
-      const result = await Order.findByCustomer(customerId, {
-        page: page || 1,
-        limit: limit || 10
-      });
-
-      res.json({
-        success: true,
-        data: result.orders,
-        pagination: result.pagination
-      });
-    } catch (error) {
-      console.error('Get orders by customer error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Lỗi server khi lấy đơn hàng theo khách hàng'
       });
     }
   },

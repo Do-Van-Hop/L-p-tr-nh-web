@@ -52,7 +52,7 @@ const inventoryController = {
         FROM products p
         ${whereClause}
       `;
-      const [countResult] = await pool.execute(countQuery, params.slice(0, -2));
+      const [countResult] = await pool.execute(countQuery, params);
 
       // Tính tổng giá trị tồn kho
       const [summary] = await pool.execute(`

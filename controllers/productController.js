@@ -157,16 +157,19 @@ const productController = {
   searchProducts: async (req, res) => {
     try {
       const { q, limit } = req.query;
-
+      
       if (!q) {
         return res.status(400).json({
           success: false,
           message: 'Query search là bắt buộc'
         });
       }
-
-      const products = await Product.search(q, limit || 10);
-
+      
+      // Đảm bảo limit là số hợp lệ
+      const limitNum = parseInt(limit) || 10;
+      
+      const products = await Product.search(q, limitNum);
+      
       res.json({
         success: true,
         data: { products }

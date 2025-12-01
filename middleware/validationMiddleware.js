@@ -153,7 +153,7 @@ const validateProductUpdate = (req, res, next) => {
 };
 
 const validateOrderCreate = (req, res, next) => {
-  const { items, discount, tax } = req.body;
+  const { items, discount } = req.body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({
@@ -185,12 +185,7 @@ const validateOrderCreate = (req, res, next) => {
     });
   }
 
-  if (tax && parseFloat(tax) < 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Thuế không được âm'
-    });
-  }
+
 
   next();
 };
