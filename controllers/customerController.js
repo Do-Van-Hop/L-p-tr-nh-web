@@ -55,7 +55,7 @@ const customerController = {
   // Tạo khách hàng mới
   createCustomer: async (req, res) => {
     try {
-      const { name, phone, email, address, loyalty_points } = req.body;
+      const { name, birth_year,  phone, email, address, loyalty_points } = req.body;
 
       // Validate required fields
       if (!name) {
@@ -63,6 +63,17 @@ const customerController = {
           success: false,
           message: 'Tên khách hàng là bắt buộc'
         });
+      }
+
+      // Validate birth_year nếu có
+      if (birth_year) {
+          const currentYear = new Date().getFullYear();
+          if (birth_year < 1900 || birth_year > currentYear) {
+              return res.status(400).json({
+                  success: false,
+                  message: 'Năm sinh không hợp lệ'
+              });
+          }
       }
 
       if (phone) {

@@ -10,7 +10,7 @@ class Customer {
           const offset = (pageNum - 1) * limitNum;
 
           let query = `
-              SELECT customer_id, name, phone, email, address, loyalty_points, created_at
+              SELECT customer_id, name, birth_year, phone, email, address, loyalty_points, created_at
               FROM customers
               WHERE 1=1
           `;
@@ -90,8 +90,8 @@ class Customer {
     try {
       const [result] = await pool.execute(
         `INSERT INTO customers 
-         (name, phone, email, address, loyalty_points) 
-         VALUES (?, ?, ?, ?, ?)`,
+         (name, birth_year, phone, email, address, loyalty_points) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [name, phone, email, address, loyalty_points]
       );
 
@@ -104,7 +104,7 @@ class Customer {
   // Cập nhật khách hàng
   static async update(customerId, updateData) {
     try {
-      const allowedFields = ['name', 'phone', 'email', 'address', 'loyalty_points'];
+      const allowedFields = ['name', 'birth_year', 'phone', 'email', 'address', 'loyalty_points'];
       const updateFields = [];
       const values = [];
 

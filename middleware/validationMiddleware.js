@@ -277,7 +277,7 @@ const validateStockInStatusUpdate = (req, res, next) => {
 };
 
 const validateCustomerCreate = (req, res, next) => {
-  const { name, phone, email } = req.body;
+  const { name, birth_year, phone, email } = req.body;
 
   if (!name || name.trim().length === 0) {
     return res.status(400).json({
@@ -286,6 +286,15 @@ const validateCustomerCreate = (req, res, next) => {
     });
   }
 
+    if (birth_year) {
+        const currentYear = new Date().getFullYear();
+        if (typeof birth_year !== 'number' || birth_year < 1900 || birth_year > currentYear) {
+            return res.status(400).json({
+                success: false,
+                message: 'Năm sinh không hợp lệ (phải từ 1900 đến hiện tại)'
+            });
+        }
+    }
   if (phone && phone.length > 20) {
     return res.status(400).json({
       success: false,
